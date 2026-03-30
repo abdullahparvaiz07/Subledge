@@ -1,0 +1,155 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: /users/{userId}
+    // Document ID: userId (Firebase Auth UID)
+    // Fields:
+    //   - uid: string (required) - The user's unique ID
+    //   - email: string (required) - The user's email address
+    //   - displayName: string (optional) - The user's display name
+    //   - photoURL: string (optional) - The user's profile photo URL
+    //   - createdAt: timestamp (required) - When the profile was created
+    //
+    // Collection: /subscriptions/{subscriptionId}
+    // Document ID: auto-generated ID
+    // Fields:
+    //   - id: string (required) - Unique identifier
+    //   - userId: string (required) - The owner's UID
+    //   - name: string (required) - Subscription service name (max 100 chars)
+    //   - amount: number (required) - Cost (must be positive)
+    //   - currency: string (required) - Currency code (e.g., USD)
+    //   - billingCycle: string (required) - 'monthly' or 'yearly'
+    //   - nextBillingDate: timestamp (required) - Next billing date
+    //   - category: string (optional) - Category (max 50 chars)
+    //   - icon: string (optional) - Icon name
+    //   - createdAt: timestamp (required) - When the subscription was added
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    // Check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if user owns the resource (for user-owned documents)
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Check if user is owner based on document's userId field
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+
+    // Verify UID hasn't been tampered with on create
+    function uidUnchanged(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Ensure userId field matches the authenticated user on create
+    function isRequestOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Validate email format
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // Validate that the document contains only the allowed fields
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // Check if the user is an admin
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         ((request.auth.token.email == "abdullahparvaiz2025@gmail.com" || 
+           request.auth.token.email == "abdullahparvaizofficial@gmail.com") && 
+          request.auth.token.email_verified == true));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    // Validate User document
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'email', 'displayName', 'photoURL', 'createdAt', 'role']) &&
+             data.uid is string && data.uid.size() > 0 &&
+             data.email is string && isValidEmail(data.email) &&
+             (data.displayName == null || (data.displayName is string && data.displayName.size() < 100)) &&
+             (data.photoURL == null || (data.photoURL is string && data.photoURL.size() < 500)) &&
+             data.createdAt is timestamp;
+    }
+
+    // Validate Subscription document
+    function isValidSubscription(data) {
+      return hasOnlyAllowedFields(['id', 'userId', 'name', 'amount', 'currency', 'billingCycle', 'nextBillingDate', 'category', 'icon', 'createdAt']) &&
+             data.id is string &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.amount is number && data.amount >= 0 &&
+             data.currency is string && data.currency.size() == 3 &&
+             data.billingCycle in ['monthly', 'yearly'] &&
+             data.nextBillingDate is timestamp &&
+             (data.category == null || (data.category is string && data.category.size() <= 50)) &&
+             (data.icon == null || data.icon is string) &&
+             data.createdAt is timestamp;
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // User profiles
+    match /users/{userId} {
+      // Users can read their own profile. Admins can read all profiles.
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Users can create their own profile. Admins can create any.
+      allow create: if (isOwner(userId) && isValidUser(request.resource.data) && 
+                      (!('role' in request.resource.data) || request.resource.data.role == 'user')) || isAdmin();
+      
+      // Users can update their own profile. Admins can update any and change roles.
+      allow update: if (isOwner(userId) && isValidUser(request.resource.data) && 
+                      request.resource.data.role == resource.data.role &&
+                      request.resource.data.uid == resource.data.uid) || isAdmin();
+                      
+      // Admins can delete profiles.
+      allow delete: if isAdmin();
+    }
+
+    // Subscriptions
+    match /subscriptions/{subscriptionId} {
+      // Users can read their own subscriptions. Admins can read all.
+      allow read: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
+      
+      // Users can create subscriptions for themselves. Admins can create for anyone.
+      allow create: if isAuthenticated() && (isValidSubscription(request.resource.data) || isAdmin());
+      
+      // Users can update their own subscriptions. Admins can update any.
+      allow update: if isAuthenticated() && ((isDocOwner() && isValidSubscription(request.resource.data) &&
+                      request.resource.data.userId == resource.data.userId &&
+                      request.resource.data.createdAt == resource.data.createdAt) || isAdmin());
+      
+      // Users can delete their own subscriptions. Admins can delete any.
+      allow delete: if isAuthenticated() && (isDocOwner() || isAdmin());
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
