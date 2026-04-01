@@ -12,6 +12,21 @@
   }
 }
 
+/* Dashboard Scrollbar */
+.scrollbar-dark::-webkit-scrollbar { width: 6px; }
+.scrollbar-dark::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-dark::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 100px; }
+.scrollbar-dark::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+.scrollbar-light::-webkit-scrollbar { width: 6px; }
+.scrollbar-light::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-light::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.08); border-radius: 100px; }
+.scrollbar-light::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.15); }
+
+.scrollbar-thin::-webkit-scrollbar { height: 4px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 100px; }
+
 /* Additional landing page styles */
 .section-divider {
   @apply w-full h-px bg-current opacity-10;

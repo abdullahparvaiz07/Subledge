@@ -205,7 +205,7 @@ export default function AuthPage({ mode, setView, isDark }: AuthPageProps) {
                       : 'bg-gray-100 focus:ring-emerald-500/20 text-black placeholder:text-black/40'
                   }`} 
                 />
-                {password && (
+                {password && !isLogin && (
                   <div className="mt-2 px-1">
                     <div className="flex gap-1 mb-1">
                       {[1, 2, 3, 4].map((level) => (

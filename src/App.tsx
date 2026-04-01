@@ -221,6 +221,8 @@ import AuthPage from './components/AuthPage';
 import { auth, onAuthStateChanged, signOut, db, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, query, where, onSnapshot, Timestamp, FirebaseUser, handleFirestoreError, OperationType, sendEmailVerification, reload } from './firebase';
 import { AnimatePresence } from 'motion/react';
 import { X, Calendar as CalendarIcon, DollarSign, Tag, Trash2, CreditCard, Monitor, Heart, MoreVertical, Mail, LogOut, CheckCircle2, AlertCircle } from 'lucide-react';
+import DashboardLayout from './components/dashboard/DashboardLayout';
+import { ToastProvider } from './components/ui/ToastSystem';
 
 function VerifyEmailView({ user, onSignOut, isDark }: { user: FirebaseUser, onSignOut: () => void, isDark: boolean }) {
   const [isResending, setIsResending] = useState(false);
@@ -379,6 +381,7 @@ export default function App() {
   const [isSubsLoading, setIsSubsLoading] = useState(true);
   const [processingSubId, setProcessingSubId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isNewSignup, setIsNewSignup] = useState(false);
 
   // Form state
   const [newSub, setNewSub] = useState({
@@ -419,6 +422,10 @@ export default function App() {
       setIsAuthReady(true);
       
       if (firebaseUser) {
+        // Track if this was a new signup for email verification flow
+        if (view === 'signup') {
+          setIsNewSignup(true);
+        }
         // Redirect immediately for better UX
         if (view === 'login' || view === 'signup' || view === 'home') {
           setView('dashboard');
@@ -569,363 +576,23 @@ export default function App() {
   }
 
   if (view === 'dashboard' && user) {
-    if (!user.emailVerified) {
-      return <VerifyEmailView user={user} onSignOut={handleSignOut} isDark={isDark} />;
+    if (isNewSignup && !user.emailVerified) {
+      return <VerifyEmailView user={user} onSignOut={() => { setIsNewSignup(false); handleSignOut(); }} isDark={isDark} />;
     }
     return (
-      <div className={`min-h-screen p-8 transition-colors duration-700 ${isDark ? 'bg-[#14291d] text-white' : 'bg-[#f4f4f0] text-[#14291d]'}`}>
-        <div className="max-w-5xl mx-auto">
-          {/* Dashboard Header */}
-          <div className="flex justify-between items-center mb-12">
-            <div className="flex items-center gap-4">
-              <Logo isDark={isDark} />
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold">Subledge</h1>
-                {userProfile?.role === 'admin' && (
-                  <span className="text-[10px] uppercase tracking-widest bg-white/10 px-2 py-0.5 rounded-full border border-white/20">
-                    Admin
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-6">
-              <button 
-                onClick={() => setIsDark(!isDark)}
-                className={`p-2 rounded-full transition-colors ${isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'}`}
-              >
-                {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-              </button>
-              <div className="flex items-center gap-4">
-                <div className="text-right hidden sm:block">
-                  <p className="text-sm font-bold">{user.displayName || user.email}</p>
-                  <button onClick={handleSignOut} className="text-xs opacity-60 hover:opacity-100">Sign Out</button>
-                </div>
-                {user.photoURL && <img src={user.photoURL} alt="Profile" className="w-10 h-10 rounded-full border border-white/10" referrerPolicy="no-referrer" />}
-              </div>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-8">
-              <div className={`p-10 rounded-[40px] border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-black/5 shadow-xl'}`}>
-                <div className="flex justify-between items-center mb-8">
-                  <div>
-                    <h2 className="text-3xl font-serif italic">Welcome back, {user.displayName?.split(' ')[0] || 'Friend'}!</h2>
-                    <p className="opacity-60 text-sm mt-1">You have {subscriptions.length} active subscriptions.</p>
-                  </div>
-                  <button 
-                    onClick={() => setShowAddModal(true)}
-                    className="flex items-center gap-2 px-6 py-3 rounded-full bg-emerald-500 text-white font-bold hover:bg-emerald-600 transition-all shadow-lg hover:shadow-emerald-500/20"
-                  >
-                    <Plus className="w-5 h-5" /> Add New
-                  </button>
-                </div>
-
-                <div className="mb-8 relative">
-                  <Search className={`absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 ${isDark ? 'text-white/30' : 'text-black/30'}`} />
-                  <input 
-                    type="text"
-                    placeholder="Search subscriptions..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className={`w-full pl-14 pr-6 py-4 rounded-2xl border-transparent focus:ring-2 outline-none transition-all ${
-                      isDark 
-                        ? 'bg-white/5 focus:ring-emerald-500/30 text-white placeholder:text-white/30' 
-                        : 'bg-gray-100 focus:ring-emerald-500/20 text-black placeholder:text-black/40'
-                    }`}
-                  />
-                </div>
-
-                {isSubsLoading ? (
-                  <div className="space-y-4">
-                    <SubscriptionSkeleton isDark={isDark} />
-                    <SubscriptionSkeleton isDark={isDark} />
-                    <SubscriptionSkeleton isDark={isDark} />
-                  </div>
-                ) : subscriptions.filter(sub => sub.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 ? (
-                  <div className="py-20 text-center opacity-40 border-2 border-dashed border-current rounded-[40px] flex flex-col items-center justify-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-current/10 flex items-center justify-center">
-                      {searchTerm ? <Search className="w-8 h-8" /> : <Plus className="w-8 h-8" />}
-                    </div>
-                    <p className="font-medium">
-                      {searchTerm ? `No results for "${searchTerm}"` : "No subscriptions added yet."}
-                    </p>
-                    {!searchTerm && (
-                      <button 
-                        onClick={() => setShowAddModal(true)}
-                        className="text-xs underline underline-offset-4 hover:opacity-100"
-                      >
-                        Add your first one
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {subscriptions
-                      .filter(sub => sub.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                      .map((sub) => (
-                      <div 
-                        key={sub.id}
-                        className={`group relative flex items-center justify-between p-6 rounded-[32px] border transition-all ${
-                          isDark ? 'bg-white/5 border-white/5 hover:bg-white/10' : 'bg-gray-50 border-black/5 hover:bg-white hover:shadow-xl'
-                        } ${processingSubId === sub.id ? 'opacity-50 pointer-events-none' : ''}`}
-                      >
-                        <div className="flex items-center gap-5">
-                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-600'}`}>
-                            {getCategoryIcon(sub.category)}
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-lg">{sub.name}</h4>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md ${isDark ? 'bg-white/10 text-white/60' : 'bg-black/5 text-black/60'}`}>
-                                {sub.billingCycle}
-                              </span>
-                              <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}`}>
-                                {sub.currency || 'USD'}
-                              </span>
-                              <span className="text-[10px] opacity-40 uppercase tracking-widest">{sub.category}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-8">
-                          <div className="text-right">
-                            <div className="font-bold text-xl">
-                              {CURRENCY_SYMBOLS[sub.currency || 'USD']}{sub.amount.toFixed(2)}
-                            </div>
-                            <div className="text-[10px] opacity-40 font-medium">Next: {sub.nextBillingDate?.toDate().toLocaleDateString()}</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {processingSubId === sub.id ? (
-                              <RefreshCw className="w-5 h-5 animate-spin opacity-50" />
-                            ) : (
-                              <button 
-                                onClick={() => handleDeleteSubscription(sub.id)}
-                                className={`p-3 rounded-2xl transition-all opacity-0 group-hover:opacity-100 ${
-                                  isDark ? 'hover:bg-red-500/20 text-red-400' : 'hover:bg-red-50 text-red-600'
-                                }`}
-                              >
-                                <Trash2 className="w-5 h-5" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        {processingSubId === sub.id && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-transparent z-10">
-                            <RefreshCw className="w-6 h-6 animate-spin opacity-50" />
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Sidebar / Stats */}
-            <div className="space-y-8">
-              <div className={`p-8 rounded-[40px] border transition-all hover:shadow-2xl ${isDark ? 'bg-white/5 border-white/10 hover:shadow-emerald-500/5' : 'bg-white border-black/5 shadow-xl hover:shadow-emerald-500/10'}`}>
-                <h3 className="font-bold mb-6 flex items-center gap-2 text-sm uppercase tracking-widest opacity-60">
-                  <PieChart className="w-4 h-4 text-emerald-500" /> Monthly Spend (USD)
-                </h3>
-                <div className="text-5xl font-serif italic mb-2">
-                  ${subscriptions.reduce((acc, sub) => {
-                    const amountInUSD = convertToUSD(sub.amount, sub.currency || 'USD');
-                    return acc + (sub.billingCycle === 'monthly' ? amountInUSD : amountInUSD / 12);
-                  }, 0).toFixed(2)}
-                </div>
-                <p className="text-[10px] opacity-40 uppercase tracking-[0.2em] font-bold">Estimated monthly total</p>
-              </div>
-
-              <div className={`p-8 rounded-[40px] border transition-all hover:shadow-2xl ${isDark ? 'bg-white/5 border-white/10 hover:shadow-cyan-500/5' : 'bg-white border-black/5 shadow-xl hover:shadow-cyan-500/10'}`}>
-                <h3 className="font-bold mb-6 flex items-center gap-2 text-sm uppercase tracking-widest opacity-60">
-                  <CreditCard className="w-4 h-4 text-cyan-500" /> Annual Spend (USD)
-                </h3>
-                <div className="text-5xl font-serif italic mb-2">
-                  ${subscriptions.reduce((acc, sub) => {
-                    const amountInUSD = convertToUSD(sub.amount, sub.currency || 'USD');
-                    return acc + (sub.billingCycle === 'monthly' ? amountInUSD * 12 : amountInUSD);
-                  }, 0).toFixed(2)}
-                </div>
-                <p className="text-[10px] opacity-40 uppercase tracking-[0.2em] font-bold">Estimated annual total</p>
-              </div>
-
-              <button 
-                onClick={() => setView('home')}
-                className={`w-full py-4 rounded-3xl border transition-all flex items-center justify-center gap-2 font-bold ${
-                  isDark ? 'border-white/10 hover:bg-white/5' : 'border-black/5 hover:bg-black/5'
-                }`}
-              >
-                <ArrowLeft className="w-4 h-4" /> Landing Page
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Add Subscription Modal */}
-        <AnimatePresence>
-          {showAddModal && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowAddModal(false)}
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-              />
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className={`relative w-full max-w-md p-8 rounded-[32px] shadow-2xl ${
-                  isDark ? 'bg-[#1a3a28] text-white' : 'bg-white text-[#14291d]'
-                }`}
-              >
-                <button 
-                  onClick={() => setShowAddModal(false)}
-                  className={`absolute top-6 right-6 p-2 rounded-full transition-colors ${
-                    isDark ? 'hover:bg-white/10 text-white/40' : 'hover:bg-black/5 text-black/40'
-                  }`}
-                >
-                  <X className="w-5 h-5" />
-                </button>
-
-                <h2 className="text-2xl font-bold mb-2">Add Subscription</h2>
-                <p className={`text-sm mb-8 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                  Keep track of your recurring expenses.
-                </p>
-
-                <form onSubmit={handleAddSubscription} className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider opacity-50 ml-1">Service Name</label>
-                    <div className="relative">
-                      <Zap className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
-                      <input 
-                        type="text" 
-                        required
-                        placeholder="e.g. Netflix, Spotify" 
-                        value={newSub.name}
-                        onChange={(e) => setNewSub({...newSub, name: e.target.value})}
-                        className={`w-full pl-12 pr-5 py-4 rounded-2xl border-transparent focus:ring-2 outline-none transition-all ${
-                          isDark 
-                            ? 'bg-white/5 focus:ring-emerald-500/30 text-white placeholder:text-white/30' 
-                            : 'bg-gray-100 focus:ring-emerald-500/20 text-black placeholder:text-black/40'
-                        }`} 
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider opacity-50 ml-1">Amount</label>
-                      <div className="relative">
-                        <div className={`absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold opacity-40`}>
-                          {CURRENCY_SYMBOLS[newSub.currency] || '$'}
-                        </div>
-                        <input 
-                          type="number" 
-                          step="0.01"
-                          required
-                          placeholder="0.00" 
-                          value={newSub.amount}
-                          onChange={(e) => setNewSub({...newSub, amount: e.target.value})}
-                          className={`w-full pl-12 pr-5 py-4 rounded-2xl border-transparent focus:ring-2 outline-none transition-all ${
-                            isDark 
-                              ? 'bg-white/5 focus:ring-emerald-500/30 text-white placeholder:text-white/30' 
-                              : 'bg-gray-100 focus:ring-emerald-500/20 text-black placeholder:text-black/40'
-                          }`} 
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider opacity-50 ml-1">Currency</label>
-                      <select 
-                        value={newSub.currency}
-                        onChange={(e) => setNewSub({...newSub, currency: e.target.value})}
-                        className={`w-full px-5 py-4 rounded-2xl border-transparent focus:ring-2 outline-none transition-all appearance-none ${
-                          isDark 
-                            ? 'bg-white/5 focus:ring-emerald-500/30 text-white' 
-                            : 'bg-gray-100 focus:ring-emerald-500/20 text-black'
-                        }`}
-                      >
-                        {Object.keys(EXCHANGE_RATES).map(curr => (
-                          <option key={curr} value={curr}>{curr}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider opacity-50 ml-1">Cycle</label>
-                      <select 
-                        value={newSub.billingCycle}
-                        onChange={(e) => setNewSub({...newSub, billingCycle: e.target.value})}
-                        className={`w-full px-5 py-4 rounded-2xl border-transparent focus:ring-2 outline-none transition-all appearance-none ${
-                          isDark 
-                            ? 'bg-white/5 focus:ring-emerald-500/30 text-white' 
-                            : 'bg-gray-100 focus:ring-emerald-500/20 text-black'
-                        }`}
-                      >
-                        <option value="monthly">Monthly</option>
-                        <option value="yearly">Yearly</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider opacity-50 ml-1">Next Billing Date</label>
-                    <div className="relative">
-                      <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
-                      <input 
-                        type="date" 
-                        required
-                        value={newSub.nextBillingDate}
-                        onChange={(e) => setNewSub({...newSub, nextBillingDate: e.target.value})}
-                        className={`w-full pl-12 pr-5 py-4 rounded-2xl border-transparent focus:ring-2 outline-none transition-all ${
-                          isDark 
-                            ? 'bg-white/5 focus:ring-emerald-500/30 text-white [color-scheme:dark]' 
-                            : 'bg-gray-100 focus:ring-emerald-500/20 text-black'
-                        }`} 
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider opacity-50 ml-1">Category</label>
-                    <div className="relative">
-                      <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
-                      <select 
-                        value={newSub.category}
-                        onChange={(e) => setNewSub({...newSub, category: e.target.value})}
-                        className={`w-full pl-12 pr-5 py-4 rounded-2xl border-transparent focus:ring-2 outline-none transition-all appearance-none ${
-                          isDark 
-                            ? 'bg-white/5 focus:ring-emerald-500/30 text-white' 
-                            : 'bg-gray-100 focus:ring-emerald-500/20 text-black'
-                        }`}
-                      >
-                        <option value="Entertainment">Entertainment</option>
-                        <option value="Software">Software</option>
-                        <option value="Utilities">Utilities</option>
-                        <option value="Health">Health</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <button 
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-all shadow-lg hover:shadow-emerald-500/20 mt-4 disabled:opacity-50"
-                  >
-                    {isSubmitting ? 'Adding...' : 'Add Subscription'}
-                  </button>
-                </form>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-      </div>
+      <ToastProvider>
+        <DashboardLayout
+          user={user}
+          userProfile={userProfile}
+          subscriptions={subscriptions}
+          isDark={isDark}
+          onToggleTheme={() => setIsDark(!isDark)}
+          onSignOut={handleSignOut}
+          isSubsLoading={isSubsLoading}
+          processingSubId={processingSubId}
+          setProcessingSubId={setProcessingSubId}
+        />
+      </ToastProvider>
     );
   }
 
