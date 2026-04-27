@@ -1011,9 +1011,17 @@ export default function App() {
                   <div className={`mt-10 w-full p-5 rounded-3xl flex items-center justify-between backdrop-blur-md border relative z-10 shadow-lg ${
                     isDark ? 'bg-gradient-to-r from-violet-500/20 to-lime-500/20 border-white/10' : 'bg-gradient-to-r from-violet-500/10 to-lime-500/10 border-black/5'
                   }`}>
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-widest opacity-50 mb-1">Next Big Bill</p>
-                      <p className="font-bold text-sm truncate max-w-[120px]">{nextBigBill.name}</p>
+                    <div className="flex items-center gap-4">
+                      <div className="transform scale-[0.7] origin-left -my-4 -ml-2">
+                        <AntigravityOfficialLogoContainer 
+                          domain={getDomain(nextBigBill.name)} 
+                          fallbackIcon={<Zap className="w-6 h-6" />} 
+                        />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest opacity-50 mb-1">Next Big Bill</p>
+                        <p className="font-bold text-sm truncate max-w-[120px]">{nextBigBill.name}</p>
+                      </div>
                     </div>
                     <div className="text-right">
                       <p className="text-xl font-bold text-emerald-500">
@@ -1078,20 +1086,35 @@ export default function App() {
                 <form onSubmit={handleAddSubscription} className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider opacity-50 ml-1">Service Name</label>
-                    <div className="relative">
-                      <Zap className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
-                      <input 
-                        type="text" 
-                        required
-                        placeholder="e.g. Netflix, Spotify" 
-                        value={newSub.name}
-                        onChange={(e) => setNewSub({...newSub, name: e.target.value})}
-                        className={`w-full pl-12 pr-5 py-4 rounded-2xl border-transparent focus:ring-2 outline-none transition-all ${
-                          isDark 
-                            ? 'bg-white/5 focus:ring-emerald-500/30 text-white placeholder:text-white/30' 
-                            : 'bg-gray-100 focus:ring-emerald-500/20 text-black placeholder:text-black/40'
-                        }`} 
-                      />
+                    <div className="flex items-center gap-4">
+                      <div className="flex-shrink-0">
+                        {newSub.name.trim().length > 2 ? (
+                          <div className="transform scale-[0.85] origin-center -my-2 -mx-1">
+                            <AntigravityOfficialLogoContainer 
+                              domain={getDomain(newSub.name)} 
+                              fallbackIcon={<Zap className="w-6 h-6" />} 
+                            />
+                          </div>
+                        ) : (
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-all ${isDark ? 'bg-white/5 border-white/10 shadow-inner' : 'bg-black/5 border-black/5'}`}>
+                            <Zap className="w-5 h-5 opacity-30" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="relative flex-1">
+                        <input 
+                          type="text" 
+                          required
+                          placeholder="e.g. Netflix, Spotify" 
+                          value={newSub.name}
+                          onChange={(e) => setNewSub({...newSub, name: e.target.value})}
+                          className={`w-full px-5 py-4 rounded-2xl border-transparent focus:ring-2 outline-none transition-all ${
+                            isDark 
+                              ? 'bg-white/5 focus:ring-emerald-500/30 text-white placeholder:text-white/30' 
+                              : 'bg-gray-100 focus:ring-emerald-500/20 text-black placeholder:text-black/40'
+                          }`} 
+                        />
+                      </div>
                     </div>
                   </div>
 
