@@ -407,16 +407,19 @@ const getDomain = (name: string) => {
   return `${n}.com`;
 };
 
-const AntigravityOfficialLogoContainer = ({ domain, fallbackIcon }: { domain: string, fallbackIcon: React.ReactNode }) => {
+const AntigravityOfficialLogoContainer = ({ name, domain }: { name: string, domain: string }) => {
   const [imgError, setImgError] = useState(false);
+  
+  const initial = name ? name.charAt(0).toUpperCase() : '?';
 
   return (
     <motion.div
       whileHover={{ scale: 1.1 }}
-      className="relative w-14 h-14 rounded-2xl bg-[#14291D] backdrop-blur-lg border border-white/10 flex items-center justify-center transition-all duration-300 shadow-[0_0_15px_rgba(163,255,18,0.3),_0_5px_15px_rgba(0,0,0,0.5)] hover:shadow-[0_0_30px_rgba(163,255,18,0.6),_0_10px_20px_rgba(0,0,0,0.6)] z-20 pointer-events-auto"
+      className="relative w-14 h-14 rounded-2xl bg-[#14291D] backdrop-blur-xl border border-white/10 flex items-center justify-center transition-all duration-300 shadow-[0_0_15px_rgba(163,255,18,0.3),_0_5px_15px_rgba(0,0,0,0.5)] hover:shadow-[0_0_30px_rgba(163,255,18,0.6),_0_10px_20px_rgba(0,0,0,0.6)] z-20 pointer-events-auto overflow-hidden group"
     >
       <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#A3FF12]/10 to-transparent pointer-events-none" />
       <div className="absolute inset-0 rounded-2xl shadow-[0_0_15px_rgba(163,255,18,0.2)] animate-pulse pointer-events-none" />
+      
       {!imgError ? (
         <img 
           src={`https://logo.clearbit.com/${domain}`} 
@@ -425,8 +428,10 @@ const AntigravityOfficialLogoContainer = ({ domain, fallbackIcon }: { domain: st
           className="w-8 h-8 object-contain rounded-md relative z-10"
         />
       ) : (
-        <div className="text-[#A3FF12] relative z-10">
-          {fallbackIcon}
+        <div className="relative z-10 flex items-center justify-center w-full h-full">
+          <span className="text-[#A3FF12] font-serif font-black text-2xl tracking-widest drop-shadow-[0_0_8px_rgba(163,255,18,0.8)]">
+            {initial}
+          </span>
         </div>
       )}
     </motion.div>
@@ -493,8 +498,8 @@ const SubscriptionCard = ({ sub, isDark, processingSubId, handleDeleteSubscripti
       <div style={{ transform: "translateZ(50px)" }} className="flex flex-col h-full justify-between pointer-events-none">
         <div className="flex justify-between items-start mb-6">
           <AntigravityOfficialLogoContainer 
+            name={sub.name}
             domain={getDomain(sub.name)} 
-            fallbackIcon={getCategoryIcon(sub.category)} 
           />
           <div className="text-right">
             <div className="font-bold text-2xl">
@@ -750,7 +755,9 @@ export default function App() {
 
     setIsSubmitting(true);
     try {
+      const newDocRef = doc(collection(db, 'subscriptions'));
       const subData = {
+        id: newDocRef.id,
         userId: user.uid,
         name: newSub.name,
         amount: parseFloat(newSub.amount),
@@ -761,7 +768,7 @@ export default function App() {
         createdAt: Timestamp.now()
       };
 
-      await addDoc(collection(db, 'subscriptions'), subData);
+      await setDoc(newDocRef, subData);
       setShowAddModal(false);
       setNewSub({
         name: '',
@@ -1014,8 +1021,8 @@ export default function App() {
                     <div className="flex items-center gap-4">
                       <div className="transform scale-[0.7] origin-left -my-4 -ml-2">
                         <AntigravityOfficialLogoContainer 
+                          name={nextBigBill.name}
                           domain={getDomain(nextBigBill.name)} 
-                          fallbackIcon={<Zap className="w-6 h-6" />} 
                         />
                       </div>
                       <div>
@@ -1091,8 +1098,8 @@ export default function App() {
                         {newSub.name.trim().length > 2 ? (
                           <div className="transform scale-[0.85] origin-center -my-2 -mx-1">
                             <AntigravityOfficialLogoContainer 
+                              name={newSub.name}
                               domain={getDomain(newSub.name)} 
-                              fallbackIcon={<Zap className="w-6 h-6" />} 
                             />
                           </div>
                         ) : (
