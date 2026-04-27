@@ -407,33 +407,24 @@ const getDomain = (name: string) => {
   return `${n}.com`;
 };
 
-const AntigravityOfficialLogoContainer = ({ name: serviceName, domain }: { name: string, domain: string }) => {
-  const [imgError, setImgError] = useState(false);
-  
-  const initial = serviceName ? serviceName.charAt(0).toUpperCase() : '?';
-
+const AntigravityOfficialLogoContainer = ({ name: subscriptionName, domain }: { name: string, domain: string }) => {
   return (
-    <motion.div
-      whileHover={{ scale: 1.1 }}
-      className="relative w-14 h-14 rounded-2xl bg-[#14291D] backdrop-blur-xl border border-white/10 flex items-center justify-center transition-all duration-300 shadow-[0_0_15px_rgba(163,255,18,0.3),_0_5px_15px_rgba(0,0,0,0.5)] hover:shadow-[0_0_30px_rgba(163,255,18,0.6),_0_10px_20px_rgba(0,0,0,0.6)] z-20 pointer-events-auto group overflow-hidden"
-    >
-      <div className="absolute inset-0 rounded-2xl shadow-[0_0_15px_rgba(163,255,18,0.2)] animate-pulse pointer-events-none" />
-      
-      {!imgError ? (
-        <img 
-          src={'https://logo.clearbit.com/' + domain} 
-          alt={serviceName + ' official logo'} 
-          onError={() => setImgError(true)}
-          className="w-10 h-10 object-contain rounded-md relative z-10" 
-        />
-      ) : (
-        <div className="relative z-10 flex items-center justify-center w-full h-full">
-          <span className="text-[#A3FF12] font-serif font-black text-2xl tracking-widest drop-shadow-[0_0_8px_rgba(163,255,18,0.8)]">
-            {initial}
-          </span>
-        </div>
-      )}
-    </motion.div>
+    <div className="w-12 h-12 rounded-xl bg-[#14291D] border border-white/10 flex items-center justify-center p-1.5 overflow-hidden shadow-[0_0_10px_rgba(163,255,18,0.2)]">
+      <img 
+        src={`https://logo.clearbit.com/${subscriptionName.toLowerCase().replace(/\s+/g, '')}.com`} 
+        alt={`${subscriptionName} official logo`}
+        className="w-full h-full object-contain"
+        onError={(e: any) => {
+          e.target.style.display = 'none';
+          if (e.target.nextSibling) {
+            e.target.nextSibling.style.display = 'flex';
+          }
+        }}
+      />
+      <span className="hidden text-white font-bold text-lg uppercase items-center justify-center w-full h-full">
+        {subscriptionName ? subscriptionName.charAt(0) : '?'}
+      </span>
+    </div>
   );
 };
 
