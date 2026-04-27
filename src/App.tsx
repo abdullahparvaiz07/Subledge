@@ -407,25 +407,24 @@ const getDomain = (name: string) => {
   return `${n}.com`;
 };
 
-const AntigravityOfficialLogoContainer = ({ name, domain }: { name: string, domain: string }) => {
+const AntigravityOfficialLogoContainer = ({ name: serviceName, domain }: { name: string, domain: string }) => {
   const [imgError, setImgError] = useState(false);
   
-  const initial = name ? name.charAt(0).toUpperCase() : '?';
+  const initial = serviceName ? serviceName.charAt(0).toUpperCase() : '?';
 
   return (
     <motion.div
       whileHover={{ scale: 1.1 }}
-      className="relative w-14 h-14 rounded-2xl bg-[#14291D] backdrop-blur-xl border border-white/10 flex items-center justify-center transition-all duration-300 shadow-[0_0_15px_rgba(163,255,18,0.3),_0_5px_15px_rgba(0,0,0,0.5)] hover:shadow-[0_0_30px_rgba(163,255,18,0.6),_0_10px_20px_rgba(0,0,0,0.6)] z-20 pointer-events-auto overflow-hidden group"
+      className="relative w-14 h-14 rounded-2xl bg-[#14291D] backdrop-blur-xl border border-white/10 flex items-center justify-center transition-all duration-300 shadow-[0_0_15px_rgba(163,255,18,0.3),_0_5px_15px_rgba(0,0,0,0.5)] hover:shadow-[0_0_30px_rgba(163,255,18,0.6),_0_10px_20px_rgba(0,0,0,0.6)] z-20 pointer-events-auto group overflow-hidden"
     >
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#A3FF12]/10 to-transparent pointer-events-none" />
       <div className="absolute inset-0 rounded-2xl shadow-[0_0_15px_rgba(163,255,18,0.2)] animate-pulse pointer-events-none" />
       
       {!imgError ? (
         <img 
-          src={`https://logo.clearbit.com/${domain}`} 
-          alt={domain} 
+          src={'https://logo.clearbit.com/' + domain} 
+          alt={serviceName + ' official logo'} 
           onError={() => setImgError(true)}
-          className="w-8 h-8 object-contain rounded-md relative z-10"
+          className="w-10 h-10 object-contain rounded-md relative z-10" 
         />
       ) : (
         <div className="relative z-10 flex items-center justify-center w-full h-full">
