@@ -407,22 +407,27 @@ const getDomain = (name: string) => {
   return `${n}.com`;
 };
 
-const AntigravityOfficialLogoContainer = ({ name: subscriptionName, domain }: { name: string, domain: string }) => {
+const AntigravityOfficialLogoContainer = ({ name: serviceName, domain }: { name: string, domain: string }) => {
   return (
-    <div className="w-12 h-12 rounded-xl bg-[#14291D] border border-white/10 flex items-center justify-center p-1.5 overflow-hidden shadow-[0_0_10px_rgba(163,255,18,0.2)]">
-      <img 
-        src={`https://logo.clearbit.com/${subscriptionName.toLowerCase().replace(/\s+/g, '')}.com`} 
-        alt={`${subscriptionName} official logo`}
-        className="w-full h-full object-contain"
-        onError={(e: any) => {
-          e.target.style.display = 'none';
-          if (e.target.nextSibling) {
-            e.target.nextSibling.style.display = 'flex';
-          }
-        }}
-      />
-      <span className="hidden text-white font-bold text-lg uppercase items-center justify-center w-full h-full">
-        {subscriptionName ? subscriptionName.charAt(0) : '?'}
+    <div className="w-12 h-12 flex items-center justify-center bg-[#14291D] rounded-xl text-white font-bold text-xl overflow-hidden border border-white/10">
+      {serviceName ? (
+        <img
+          src={`https://logo.clearbit.com/${serviceName.trim().toLowerCase().replace(/\s+/g, '')}.com`}
+          alt="Service Logo"
+          className="w-full h-full object-contain bg-white"
+          onError={(e: any) => {
+            e.target.style.display = 'none';
+            if (e.target.nextSibling) e.target.nextSibling.style.display = 'block';
+          }}
+          onLoad={(e: any) => {
+            e.target.style.display = 'block';
+            if (e.target.nextSibling) e.target.nextSibling.style.display = 'none';
+          }}
+        />
+      ) : null}
+      
+      <span style={{ display: 'none' }}>
+        {serviceName ? serviceName.charAt(0).toUpperCase() : ''}
       </span>
     </div>
   );
