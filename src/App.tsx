@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'motion/react';
 import { 
   ChevronRight, Moon, Sun, LayoutDashboard, Brain, 
   Bell, PieChart, BarChart3, BarChart2, Globe, Zap, RefreshCw,
-  Figma, Headphones, BookOpen, Home, Settings, Plus, ArrowLeft, Search
+  Figma, Headphones, BookOpen, Home, Settings, Plus, ArrowLeft, Search, AlertCircle
 } from 'lucide-react';
+import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 
 export const Logo = ({ isDark }: { isDark: boolean }) => (
   <div className="relative w-8 h-8 flex items-center justify-center">
@@ -367,6 +368,282 @@ const SubscriptionSkeleton = ({ isDark }: { isDark: boolean }) => (
   </div>
 );
 
+const EXCHANGE_RATES: { [key: string]: number } = {
+  USD: 1, EUR: 0.92, GBP: 0.79, PKR: 278.50, INR: 83.30, JPY: 151.30
+};
+
+const CURRENCY_SYMBOLS: { [key: string]: string } = {
+  USD: '$', EUR: '€', GBP: '£', PKR: 'Rs', INR: '₹', JPY: '¥'
+};
+
+const convertToUSD = (amount: number, currency: string) => {
+  const rate = EXCHANGE_RATES[currency] || 1;
+  return amount / rate;
+};
+
+const getBrandColor = (name: string) => {
+  const n = name.toLowerCase();
+  if (n.includes('netflix')) return 'rgba(229, 9, 20, 0.4)';
+  if (n.includes('spotify')) return 'rgba(30, 215, 96, 0.4)';
+  if (n.includes('youtube')) return 'rgba(255, 0, 0, 0.4)';
+  if (n.includes('amazon') || n.includes('prime')) return 'rgba(255, 153, 0, 0.4)';
+  if (n.includes('apple')) return 'rgba(255, 255, 255, 0.3)';
+  if (n.includes('hulu')) return 'rgba(28, 231, 131, 0.4)';
+  if (n.includes('disney')) return 'rgba(17, 60, 207, 0.4)';
+  return 'rgba(16, 185, 129, 0.3)';
+};
+
+const SubscriptionCard = ({ sub, isDark, processingSubId, handleDeleteSubscription, getCategoryIcon }) => {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const mouseX = useSpring(x, { stiffness: 150, damping: 20 });
+  const mouseY = useSpring(y, { stiffness: 150, damping: 20 });
+
+  const rotateX = useTransform(mouseY, [-0.5, 0.5], ["10deg", "-10deg"]);
+  const rotateY = useTransform(mouseX, [-0.5, 0.5], ["-10deg", "10deg"]);
+
+  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const mouseXPos = event.clientX - rect.left;
+    const mouseYPos = event.clientY - rect.top;
+
+    x.set(mouseXPos / width - 0.5);
+    y.set(mouseYPos / height - 0.5);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  const brandColor = getBrandColor(sub.name);
+
+  return (
+    <motion.div
+      style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      variants={{
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0 }
+      }}
+      whileHover={{ 
+        y: -8, 
+        boxShadow: `0 20px 40px ${brandColor}`, 
+        scale: 1.02,
+        borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'
+      }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className={`group relative flex flex-col justify-between p-6 rounded-[32px] border backdrop-blur-md transition-colors overflow-hidden ${
+        isDark ? 'bg-[#14291D]/60 border-white/10' : 'bg-white border-black/5'
+      } ${processingSubId === sub.id ? 'opacity-50 pointer-events-none' : ''}`}
+    >
+      {/* Radial Glow */}
+      <div 
+        className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500 rounded-[32px] pointer-events-none" 
+        style={{
+          background: `radial-gradient(circle at center, ${brandColor}, transparent)`
+        }}
+      />
+      
+      {/* Content Layer */}
+      <div style={{ transform: "translateZ(50px)" }} className="flex flex-col h-full justify-between pointer-events-none">
+        <div className="flex justify-between items-start mb-6">
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border border-white/5 shadow-inner ${isDark ? 'bg-[#14291D] text-lime-400' : 'bg-black/5 text-black'}`}>
+            {getCategoryIcon(sub.category)}
+          </div>
+          <div className="text-right">
+            <div className="font-bold text-2xl">
+              {CURRENCY_SYMBOLS[sub.currency || 'USD']}{sub.amount.toFixed(2)}
+            </div>
+            <div className="flex items-center justify-end gap-1 mt-1">
+              <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md ${isDark ? 'bg-white/10 text-white/60' : 'bg-black/5 text-black/60'}`}>
+                {sub.billingCycle}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex-1 mb-4">
+          <h4 className="font-bold text-xl tracking-tight truncate">{sub.name}</h4>
+          <span className="text-[10px] opacity-40 uppercase tracking-widest">{sub.category}</span>
+        </div>
+        
+        <div className="pt-4 border-t border-current/10 flex items-center justify-between">
+          <div className="text-[10px] opacity-60 font-medium uppercase tracking-widest">
+            Next: {sub.nextBillingDate?.toDate().toLocaleDateString()}
+          </div>
+          {processingSubId === sub.id ? (
+            <RefreshCw className="w-5 h-5 animate-spin opacity-50" />
+          ) : (
+            <button 
+              onClick={(e) => { e.stopPropagation(); handleDeleteSubscription(sub.id); }}
+              className={`p-2 rounded-xl transition-all opacity-0 group-hover:opacity-100 relative z-20 pointer-events-auto ${
+                isDark ? 'hover:bg-red-500/20 text-red-400' : 'hover:bg-red-50 text-red-600'
+              }`}
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+      
+      {processingSubId === sub.id && (
+        <div style={{ transform: "translateZ(60px)" }} className="absolute inset-0 flex items-center justify-center bg-transparent z-20 rounded-[32px]">
+          <RefreshCw className="w-6 h-6 animate-spin opacity-50" />
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
+const GhostAlert = ({ upcomingBills }) => {
+  const urgentBills = upcomingBills.filter(s => s.diffDays <= 2);
+  
+  return (
+    <AnimatePresence>
+      {urgentBills.length > 0 && (
+        <motion.div
+          initial={{ height: 0, opacity: 0, marginBottom: 0 }}
+          animate={{ height: 'auto', opacity: 1, marginBottom: 32 }}
+          exit={{ height: 0, opacity: 0, marginBottom: 0 }}
+          className="overflow-hidden"
+        >
+          <div className="p-6 rounded-[32px] border border-white/10 backdrop-blur-md shadow-[0_0_40px_rgba(139,92,246,0.15)] relative overflow-hidden bg-white/5">
+            <div className="absolute inset-0 bg-gradient-to-r from-violet-500/10 to-lime-500/10" />
+            <div className="relative z-10 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-violet-500/20 flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6 text-violet-400 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="font-bold uppercase tracking-widest text-sm bg-clip-text text-transparent bg-gradient-to-r from-violet-400 to-lime-400">
+                    Payment Due Soon
+                  </h3>
+                  <p className="text-sm opacity-70 mt-1 font-medium">
+                    {urgentBills.map(b => b.name).join(', ')} renewing within 48 hours.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+const SpendingTrendChart = ({ subscriptions }) => {
+  const data = Array.from({ length: 30 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - 29 + i);
+    
+    const dayBills = subscriptions.filter(s => {
+      if (!s.nextBillingDate) return false;
+      const subDate = s.nextBillingDate.toDate();
+      return subDate.getDate() === date.getDate();
+    });
+    const amount = dayBills.reduce((acc, sub) => acc + (sub.amount || 0), 0);
+    return { name: date.getDate().toString(), amount };
+  });
+
+  let accumulated = 0;
+  const trendData = data.map(d => {
+    accumulated += d.amount;
+    return { ...d, total: accumulated };
+  });
+
+  return (
+    <div className="w-full h-[180px] mt-8 relative z-10">
+      <h3 className="font-bold mb-6 flex items-center gap-2 text-sm uppercase tracking-widest opacity-60">
+        <BarChart3 className="w-4 h-4 text-[#A3FF12]" /> Spending Trend
+      </h3>
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={trendData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#A3FF12" stopOpacity={0.4}/>
+              <stop offset="95%" stopColor="#A3FF12" stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          <Area 
+            type="monotone" 
+            dataKey="total" 
+            stroke="#A3FF12" 
+            strokeWidth={3}
+            fillOpacity={1} 
+            fill="url(#colorTotal)" 
+            animationDuration={2000}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
+
+const SmartBurnRateBar = ({ subscriptions, displayCurrency }) => {
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const monthProgress = (now.getDate() / daysInMonth) * 100;
+
+  const totalMonthlySpend = subscriptions.reduce((acc, sub) => {
+    const amountInUSD = convertToUSD(sub.amount, sub.currency || 'USD');
+    const amountInDisplay = amountInUSD * (EXCHANGE_RATES[displayCurrency] || 1);
+    return acc + (sub.billingCycle === 'monthly' ? amountInDisplay : amountInDisplay / 12);
+  }, 0);
+
+  const spentSoFar = subscriptions.reduce((acc, sub) => {
+    if (!sub.nextBillingDate) return acc;
+    const subDate = sub.nextBillingDate.toDate();
+    const amountInUSD = convertToUSD(sub.amount, sub.currency || 'USD');
+    const amountInDisplay = amountInUSD * (EXCHANGE_RATES[displayCurrency] || 1);
+    const monthlyAmount = sub.billingCycle === 'monthly' ? amountInDisplay : amountInDisplay / 12;
+    
+    if (subDate.getDate() <= now.getDate()) {
+      return acc + monthlyAmount;
+    }
+    return acc;
+  }, 0);
+
+  const spentProgress = totalMonthlySpend > 0 ? (spentSoFar / totalMonthlySpend) * 100 : 0;
+
+  return (
+    <div className="mt-10 space-y-5 w-full relative z-10">
+      <div>
+        <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest opacity-60 mb-2">
+          <span>Month Passed</span>
+          <span>{Math.round(monthProgress)}%</span>
+        </div>
+        <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+          <motion.div 
+            initial={{ width: 0 }}
+            animate={{ width: `${monthProgress}%` }}
+            transition={{ duration: 1.5, delay: 0.5, ease: "easeOut" }}
+            className="h-full bg-white/40 rounded-full"
+          />
+        </div>
+      </div>
+      <div>
+        <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest opacity-60 mb-2">
+          <span>Burned So Far</span>
+          <span>{Math.round(spentProgress)}%</span>
+        </div>
+        <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden shadow-[inset_0_0_10px_rgba(0,0,0,0.2)]">
+          <motion.div 
+            initial={{ width: 0 }}
+            animate={{ width: `${spentProgress}%` }}
+            transition={{ duration: 1.5, delay: 0.7, ease: "easeOut" }}
+            className="h-full bg-gradient-to-r from-emerald-500 to-lime-400 rounded-full shadow-[0_0_10px_rgba(163,255,18,0.5)]"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function App() {
   const [isDark, setIsDark] = useState(true);
   const [view, setView] = useState<'home' | 'login' | 'signup' | 'dashboard'>('home');
@@ -379,8 +656,8 @@ export default function App() {
   const [isSubsLoading, setIsSubsLoading] = useState(true);
   const [processingSubId, setProcessingSubId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [displayCurrency, setDisplayCurrency] = useState('USD');
 
-  // Form state
   const [newSub, setNewSub] = useState({
     name: '',
     amount: '',
@@ -389,29 +666,6 @@ export default function App() {
     nextBillingDate: '',
     category: 'Entertainment'
   });
-
-  const EXCHANGE_RATES: { [key: string]: number } = {
-    USD: 1,
-    EUR: 0.92,
-    GBP: 0.79,
-    PKR: 278.50,
-    INR: 83.30,
-    JPY: 151.30
-  };
-
-  const CURRENCY_SYMBOLS: { [key: string]: string } = {
-    USD: '$',
-    EUR: '€',
-    GBP: '£',
-    PKR: 'Rs',
-    INR: '₹',
-    JPY: '¥'
-  };
-
-  const convertToUSD = (amount: number, currency: string) => {
-    const rate = EXCHANGE_RATES[currency] || 1;
-    return amount / rate;
-  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
@@ -572,8 +826,25 @@ export default function App() {
     if (!user.emailVerified) {
       return <VerifyEmailView user={user} onSignOut={handleSignOut} isDark={isDark} />;
     }
+
+    const upcomingBills = subscriptions
+      .filter(s => s.nextBillingDate)
+      .map(s => {
+        const diffTime = s.nextBillingDate.toDate().getTime() - new Date().getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return { ...s, diffDays };
+      })
+      .filter(s => s.diffDays >= 0);
+
+    const nextBigBill = upcomingBills.length > 0 
+      ? upcomingBills.sort((a, b) => convertToUSD(b.amount, b.currency || 'USD') - convertToUSD(a.amount, a.currency || 'USD'))[0]
+      : null;
+
     return (
-      <div className={`min-h-screen p-8 transition-colors duration-700 ${isDark ? 'bg-[#14291d] text-white' : 'bg-[#f4f4f0] text-[#14291d]'}`}>
+      <div 
+        className={`min-h-screen p-8 transition-colors duration-700 ${isDark ? 'text-white' : 'bg-[#f4f4f0] text-[#14291d]'}`}
+        style={isDark ? { background: 'radial-gradient(circle at center, #1b3a29 0%, #14291D 100%)' } : {}}
+      >
         <div className="max-w-5xl mx-auto">
           {/* Dashboard Header */}
           <div className="flex justify-between items-center mb-12">
@@ -637,6 +908,9 @@ export default function App() {
                   />
                 </div>
 
+                {/* Predictive Ghost Alert */}
+                {!isSubsLoading && <GhostAlert upcomingBills={upcomingBills} />}
+
                 {isSubsLoading ? (
                   <div className="space-y-4">
                     <SubscriptionSkeleton isDark={isDark} />
@@ -661,94 +935,109 @@ export default function App() {
                     )}
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <motion.div 
+                    initial="hidden"
+                    animate="visible"
+                    variants={{
+                      visible: { transition: { staggerChildren: 0.1 } },
+                      hidden: {}
+                    }}
+                    className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                  >
                     {subscriptions
                       .filter(sub => sub.name.toLowerCase().includes(searchTerm.toLowerCase()))
                       .map((sub) => (
-                      <div 
-                        key={sub.id}
-                        className={`group relative flex items-center justify-between p-6 rounded-[32px] border transition-all ${
-                          isDark ? 'bg-white/5 border-white/5 hover:bg-white/10' : 'bg-gray-50 border-black/5 hover:bg-white hover:shadow-xl'
-                        } ${processingSubId === sub.id ? 'opacity-50 pointer-events-none' : ''}`}
-                      >
-                        <div className="flex items-center gap-5">
-                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-600'}`}>
-                            {getCategoryIcon(sub.category)}
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-lg">{sub.name}</h4>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md ${isDark ? 'bg-white/10 text-white/60' : 'bg-black/5 text-black/60'}`}>
-                                {sub.billingCycle}
-                              </span>
-                              <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}`}>
-                                {sub.currency || 'USD'}
-                              </span>
-                              <span className="text-[10px] opacity-40 uppercase tracking-widest">{sub.category}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-8">
-                          <div className="text-right">
-                            <div className="font-bold text-xl">
-                              {CURRENCY_SYMBOLS[sub.currency || 'USD']}{sub.amount.toFixed(2)}
-                            </div>
-                            <div className="text-[10px] opacity-40 font-medium">Next: {sub.nextBillingDate?.toDate().toLocaleDateString()}</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {processingSubId === sub.id ? (
-                              <RefreshCw className="w-5 h-5 animate-spin opacity-50" />
-                            ) : (
-                              <button 
-                                onClick={() => handleDeleteSubscription(sub.id)}
-                                className={`p-3 rounded-2xl transition-all opacity-0 group-hover:opacity-100 ${
-                                  isDark ? 'hover:bg-red-500/20 text-red-400' : 'hover:bg-red-50 text-red-600'
-                                }`}
-                              >
-                                <Trash2 className="w-5 h-5" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        {processingSubId === sub.id && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-transparent z-10">
-                            <RefreshCw className="w-6 h-6 animate-spin opacity-50" />
-                          </div>
-                        )}
-                      </div>
+                      <SubscriptionCard 
+                        key={sub.id} 
+                        sub={sub} 
+                        isDark={isDark} 
+                        processingSubId={processingSubId} 
+                        handleDeleteSubscription={handleDeleteSubscription}
+                        getCategoryIcon={getCategoryIcon}
+                      />
                     ))}
-                  </div>
+                  </motion.div>
                 )}
               </div>
             </div>
 
             {/* Sidebar / Stats */}
             <div className="space-y-8">
-              <div className={`p-8 rounded-[40px] border transition-all hover:shadow-2xl ${isDark ? 'bg-white/5 border-white/10 hover:shadow-emerald-500/5' : 'bg-white border-black/5 shadow-xl hover:shadow-emerald-500/10'}`}>
-                <h3 className="font-bold mb-6 flex items-center gap-2 text-sm uppercase tracking-widest opacity-60">
-                  <PieChart className="w-4 h-4 text-emerald-500" /> Monthly Spend (USD)
-                </h3>
-                <div className="text-5xl font-serif italic mb-2">
-                  ${subscriptions.reduce((acc, sub) => {
-                    const amountInUSD = convertToUSD(sub.amount, sub.currency || 'USD');
-                    return acc + (sub.billingCycle === 'monthly' ? amountInUSD : amountInUSD / 12);
-                  }, 0).toFixed(2)}
-                </div>
-                <p className="text-[10px] opacity-40 uppercase tracking-[0.2em] font-bold">Estimated monthly total</p>
+              {/* Currency Switcher */}
+              <div className={`p-4 rounded-[24px] border flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-black/5 shadow-md'}`}>
+                {Object.keys(EXCHANGE_RATES).map(curr => (
+                  <button
+                    key={curr}
+                    onClick={() => setDisplayCurrency(curr)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex-1 ${
+                      displayCurrency === curr
+                        ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                        : isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'
+                    }`}
+                  >
+                    {curr}
+                  </button>
+                ))}
               </div>
 
-              <div className={`p-8 rounded-[40px] border transition-all hover:shadow-2xl ${isDark ? 'bg-white/5 border-white/10 hover:shadow-cyan-500/5' : 'bg-white border-black/5 shadow-xl hover:shadow-cyan-500/10'}`}>
-                <h3 className="font-bold mb-6 flex items-center gap-2 text-sm uppercase tracking-widest opacity-60">
-                  <CreditCard className="w-4 h-4 text-cyan-500" /> Annual Spend (USD)
+              {/* The Floating Burn Rate Sphere */}
+              <div className={`relative p-8 rounded-[40px] border flex flex-col items-center justify-center overflow-hidden transition-all hover:shadow-2xl min-h-[350px] ${
+                isDark ? 'bg-white/5 border-white/10 hover:shadow-emerald-500/5' : 'bg-white border-black/5 shadow-xl hover:shadow-emerald-500/10'
+              }`}>
+                {/* Background glow */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] bg-emerald-500/20 blur-[60px] rounded-full pointer-events-none" />
+                
+                <h3 className="font-bold mb-8 flex items-center gap-2 text-sm uppercase tracking-widest opacity-60 z-10">
+                  <PieChart className="w-4 h-4 text-emerald-500" /> Monthly Burn Rate
                 </h3>
-                <div className="text-5xl font-serif italic mb-2">
-                  ${subscriptions.reduce((acc, sub) => {
-                    const amountInUSD = convertToUSD(sub.amount, sub.currency || 'USD');
-                    return acc + (sub.billingCycle === 'monthly' ? amountInUSD * 12 : amountInUSD);
-                  }, 0).toFixed(2)}
-                </div>
-                <p className="text-[10px] opacity-40 uppercase tracking-[0.2em] font-bold">Estimated annual total</p>
+                
+                {/* The Sphere */}
+                <motion.div 
+                  animate={{ y: [-8, 8, -8] }}
+                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                  className={`relative z-10 w-56 h-56 rounded-full flex flex-col items-center justify-center backdrop-blur-md border border-white/20 shadow-[inset_0_4px_30px_rgba(255,255,255,0.1),0_8px_32px_rgba(0,0,0,0.1)] ${
+                    isDark ? 'bg-white/10 shadow-[0_0_50px_rgba(16,185,129,0.15)]' : 'bg-white/60 shadow-[0_0_50px_rgba(16,185,129,0.08)]'
+                  }`}
+                >
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-emerald-500/10 to-transparent" />
+                  <div className="text-4xl font-serif italic font-bold text-center z-10 relative px-4 flex flex-col items-center">
+                    <span className="text-lg opacity-70 mb-1">{CURRENCY_SYMBOLS[displayCurrency] || '$'}</span>
+                    <span>
+                      {subscriptions.reduce((acc, sub) => {
+                        const amountInUSD = convertToUSD(sub.amount, sub.currency || 'USD');
+                        const amountInDisplay = amountInUSD * (EXCHANGE_RATES[displayCurrency] || 1);
+                        return acc + (sub.billingCycle === 'monthly' ? amountInDisplay : amountInDisplay / 12);
+                      }, 0).toFixed(2)}
+                    </span>
+                  </div>
+                  <p className="text-[10px] opacity-60 uppercase tracking-[0.2em] font-bold mt-2 z-10 relative">Total Spent</p>
+                </motion.div>
+
+                {/* Next Big Bill (Upcoming Payments) */}
+                {nextBigBill && (
+                  <div className={`mt-10 w-full p-5 rounded-3xl flex items-center justify-between backdrop-blur-md border relative z-10 shadow-lg ${
+                    isDark ? 'bg-gradient-to-r from-violet-500/20 to-lime-500/20 border-white/10' : 'bg-gradient-to-r from-violet-500/10 to-lime-500/10 border-black/5'
+                  }`}>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest opacity-50 mb-1">Next Big Bill</p>
+                      <p className="font-bold text-sm truncate max-w-[120px]">{nextBigBill.name}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-bold text-emerald-500">
+                        {nextBigBill.diffDays === 0 ? 'Today' : `${nextBigBill.diffDays}d`}
+                      </p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest opacity-50 mt-0.5">Left</p>
+                    </div>
+                  </div>
+                )}
+                
+                <SmartBurnRateBar 
+                  subscriptions={subscriptions} 
+                  displayCurrency={displayCurrency} 
+                />
               </div>
+
+              <SpendingTrendChart subscriptions={subscriptions} />
 
               <button 
                 onClick={() => setView('home')}
