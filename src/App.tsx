@@ -5,8 +5,6 @@ import {
   Bell, PieChart, BarChart3, BarChart2, Globe, Zap, RefreshCw,
   Figma, Headphones, BookOpen, Home, Settings, Plus, ArrowLeft, Search, AlertCircle
 } from 'lucide-react';
-import { AreaChart, Area, ResponsiveContainer } from 'recharts';
-
 export const Logo = ({ isDark }: { isDark: boolean }) => (
   <div className="relative w-8 h-8 flex items-center justify-center">
     <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0">
@@ -393,6 +391,48 @@ const getBrandColor = (name: string) => {
   return 'rgba(16, 185, 129, 0.3)';
 };
 
+const getDomain = (name: string) => {
+  const n = name.toLowerCase().replace(/\s+/g, '');
+  if (n.includes('netflix')) return 'netflix.com';
+  if (n.includes('spotify')) return 'spotify.com';
+  if (n.includes('youtube')) return 'youtube.com';
+  if (n.includes('amazon') || n.includes('prime')) return 'amazon.com';
+  if (n.includes('apple')) return 'apple.com';
+  if (n.includes('hulu')) return 'hulu.com';
+  if (n.includes('disney')) return 'disneyplus.com';
+  if (n.includes('chatgpt') || n.includes('openai')) return 'openai.com';
+  if (n.includes('figma')) return 'figma.com';
+  if (n.includes('adobe')) return 'adobe.com';
+  if (n.includes('github')) return 'github.com';
+  return `${n}.com`;
+};
+
+const AntigravityOfficialLogoContainer = ({ domain, fallbackIcon }: { domain: string, fallbackIcon: React.ReactNode }) => {
+  const [imgError, setImgError] = useState(false);
+
+  return (
+    <motion.div
+      whileHover={{ scale: 1.1 }}
+      className="relative w-14 h-14 rounded-2xl bg-[#14291D] backdrop-blur-lg border border-white/10 flex items-center justify-center transition-all duration-300 shadow-[0_0_15px_rgba(163,255,18,0.3),_0_5px_15px_rgba(0,0,0,0.5)] hover:shadow-[0_0_30px_rgba(163,255,18,0.6),_0_10px_20px_rgba(0,0,0,0.6)] z-20 pointer-events-auto"
+    >
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#A3FF12]/10 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 rounded-2xl shadow-[0_0_15px_rgba(163,255,18,0.2)] animate-pulse pointer-events-none" />
+      {!imgError ? (
+        <img 
+          src={`https://logo.clearbit.com/${domain}`} 
+          alt={domain} 
+          onError={() => setImgError(true)}
+          className="w-8 h-8 object-contain rounded-md relative z-10"
+        />
+      ) : (
+        <div className="text-[#A3FF12] relative z-10">
+          {fallbackIcon}
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
 const SubscriptionCard = ({ sub, isDark, processingSubId, handleDeleteSubscription, getCategoryIcon }) => {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -452,9 +492,10 @@ const SubscriptionCard = ({ sub, isDark, processingSubId, handleDeleteSubscripti
       {/* Content Layer */}
       <div style={{ transform: "translateZ(50px)" }} className="flex flex-col h-full justify-between pointer-events-none">
         <div className="flex justify-between items-start mb-6">
-          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border border-white/5 shadow-inner ${isDark ? 'bg-[#14291D] text-lime-400' : 'bg-black/5 text-black'}`}>
-            {getCategoryIcon(sub.category)}
-          </div>
+          <AntigravityOfficialLogoContainer 
+            domain={getDomain(sub.name)} 
+            fallbackIcon={getCategoryIcon(sub.category)} 
+          />
           <div className="text-right">
             <div className="font-bold text-2xl">
               {CURRENCY_SYMBOLS[sub.currency || 'USD']}{sub.amount.toFixed(2)}
@@ -533,54 +574,6 @@ const GhostAlert = ({ upcomingBills }) => {
         </motion.div>
       )}
     </AnimatePresence>
-  );
-};
-
-const SpendingTrendChart = ({ subscriptions }) => {
-  const data = Array.from({ length: 30 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - 29 + i);
-    
-    const dayBills = subscriptions.filter(s => {
-      if (!s.nextBillingDate) return false;
-      const subDate = s.nextBillingDate.toDate();
-      return subDate.getDate() === date.getDate();
-    });
-    const amount = dayBills.reduce((acc, sub) => acc + (sub.amount || 0), 0);
-    return { name: date.getDate().toString(), amount };
-  });
-
-  let accumulated = 0;
-  const trendData = data.map(d => {
-    accumulated += d.amount;
-    return { ...d, total: accumulated };
-  });
-
-  return (
-    <div className="w-full h-[180px] mt-8 relative z-10">
-      <h3 className="font-bold mb-6 flex items-center gap-2 text-sm uppercase tracking-widest opacity-60">
-        <BarChart3 className="w-4 h-4 text-[#A3FF12]" /> Spending Trend
-      </h3>
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={trendData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-          <defs>
-            <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#A3FF12" stopOpacity={0.4}/>
-              <stop offset="95%" stopColor="#A3FF12" stopOpacity={0}/>
-            </linearGradient>
-          </defs>
-          <Area 
-            type="monotone" 
-            dataKey="total" 
-            stroke="#A3FF12" 
-            strokeWidth={3}
-            fillOpacity={1} 
-            fill="url(#colorTotal)" 
-            animationDuration={2000}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
   );
 };
 
@@ -1036,8 +1029,6 @@ export default function App() {
                   displayCurrency={displayCurrency} 
                 />
               </div>
-
-              <SpendingTrendChart subscriptions={subscriptions} />
 
               <button 
                 onClick={() => setView('home')}
