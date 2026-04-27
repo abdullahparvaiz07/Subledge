@@ -3,7 +3,9 @@ import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from
 import { 
   ChevronRight, Moon, Sun, LayoutDashboard, Brain, 
   Bell, PieChart, BarChart3, BarChart2, Globe, Zap, RefreshCw,
-  Figma, Headphones, BookOpen, Home, Settings, Plus, ArrowLeft, Search, AlertCircle
+  Figma, Headphones, BookOpen, Home, Settings, Plus, ArrowLeft, Search, AlertCircle,
+  X, Calendar as CalendarIcon, DollarSign, Tag, Trash2, CreditCard, Monitor, Heart, 
+  MoreVertical, Mail, LogOut, CheckCircle2, Twitter, Github, Linkedin
 } from 'lucide-react';
 export const Logo = ({ isDark }: { isDark: boolean }) => (
   <div className="relative w-8 h-8 flex items-center justify-center">
@@ -218,8 +220,6 @@ const steps = [
 
 import AuthPage from './components/AuthPage';
 import { auth, onAuthStateChanged, signOut, db, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, query, where, onSnapshot, Timestamp, FirebaseUser, handleFirestoreError, OperationType, sendEmailVerification, reload } from './firebase';
-import { AnimatePresence } from 'motion/react';
-import { X, Calendar as CalendarIcon, DollarSign, Tag, Trash2, CreditCard, Monitor, Heart, MoreVertical, Mail, LogOut, CheckCircle2, AlertCircle, Twitter, Github, Linkedin } from 'lucide-react';
 
 function VerifyEmailView({ user, onSignOut, isDark }: { user: FirebaseUser, onSignOut: () => void, isDark: boolean }) {
   const [isResending, setIsResending] = useState(false);
@@ -667,7 +667,7 @@ export default function App() {
       
       if (firebaseUser) {
         // Redirect immediately for better UX
-        if (view === 'login' || view === 'signup' || view === 'home') {
+        if (view === 'login' || view === 'signup') {
           setView('dashboard');
         }
 
