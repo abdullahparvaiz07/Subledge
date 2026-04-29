@@ -407,28 +407,79 @@ const getDomain = (name: string) => {
   return `${n}.com`;
 };
 
+const SERVICE_LOGOS: { [key: string]: string } = {
+  'netflix': 'https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2023.ico',
+  'spotify': 'https://open.spotifycdn.com/cdn/images/favicon32.b64ecc03.png',
+  'youtube': 'https://www.youtube.com/s/desktop/271dfacc/img/favicon_144x144.png',
+  'amazon': 'https://www.amazon.com/favicon.ico',
+  'prime': 'https://m.media-amazon.com/images/G/01/digital/video/web/Logo-min.png',
+  'apple': 'https://www.apple.com/favicon.ico',
+  'hulu': 'https://assetshuluimcom-a.akamaihd.net/h3o/facebook_share_thumb_default_hulu.jpg',
+  'disney': 'https://cnbl-cdn.bamgrid.com/assets/7ecc8bcb60ad77193058d63e321bd21cbac2fc67f6e800b891e0a4e8ae1b8c5f/original',
+  'hbo': 'https://play-lh.googleusercontent.com/1iyX7VdQ7MlM7iotI9XDtTwgiVmqFGzqwz10L67XVoyiTmJnflDzjv-N1Sq4VYA3gQ',
+  'chatgpt': 'https://cdn.oaistatic.com/assets/apple-touch-icon-mz9nytnj.png',
+  'openai': 'https://cdn.oaistatic.com/assets/apple-touch-icon-mz9nytnj.png',
+  'figma': 'https://static.figma.com/app/icon/1/favicon.png',
+  'adobe': 'https://www.adobe.com/favicon.ico',
+  'github': 'https://github.githubassets.com/favicons/favicon-dark.png',
+  'notion': 'https://www.notion.so/images/favicon.ico',
+  'slack': 'https://a.slack-edge.com/80588/marketing/img/icons/icon_slack_hash_colored.png',
+  'zoom': 'https://st1.zoom.us/zoom.ico',
+  'dropbox': 'https://cfl.dropboxstatic.com/static/images/favicon-vfl8lUR9B.ico',
+  'canva': 'https://static.canva.com/static/images/favicon-1.ico',
+  'twitch': 'https://static.twitchcdn.net/assets/favicon-32-e29e246c157142c94346.png',
+  'microsoft': 'https://c.s-microsoft.com/favicon.ico',
+  'google': 'https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png',
+  'icloud': 'https://www.apple.com/favicon.ico',
+  'linkedin': 'https://static.licdn.com/aero-v1/sc/h/akt4ae504epesldzj74dzred8',
+  'twitter': 'https://abs.twimg.com/favicons/twitter.3.ico',
+  'x': 'https://abs.twimg.com/favicons/twitter.3.ico',
+  'instagram': 'https://static.cdninstagram.com/rsrc.php/v3/yG/r/De-Dwpd5CHc.png',
+  'tidal': 'https://tidal.com/favicon.ico',
+  'crunchyroll': 'https://static.crunchyroll.com/cxweb/assets/img/favicons/favicon-32x32.png',
+  'wordpress': 'https://s1.wp.com/i/favicon.ico',
+  'grammarly': 'https://static.grammarly.com/assets/files/efe57d016d9efff36da7884c193b646b/favicon-32x32.png',
+  'duolingo': 'https://d35aaqx5ub95lt.cloudfront.net/favicon.ico',
+  'claude': 'https://claude.ai/favicon.ico',
+  'gemini': 'https://www.gstatic.com/lamda/images/gemini_favicon_f069958c85030456e93de685481c559f160ea06b.png',
+  'copilot': 'https://copilot.microsoft.com/favicon.ico',
+};
+
+const getServiceLogoUrl = (name: string, domain: string): string => {
+  const n = name.toLowerCase().replace(/\s+/g, '');
+  
+  // Check curated logos first
+  for (const [key, url] of Object.entries(SERVICE_LOGOS)) {
+    if (n.includes(key)) return url;
+  }
+  
+  // Fallback to Google's favicon service (high-res)
+  return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+};
+
 const AntigravityOfficialLogoContainer = ({ name: serviceName, domain }: { name: string, domain: string }) => {
+  const [imgFailed, setImgFailed] = React.useState(false);
+  const logoUrl = serviceName ? getServiceLogoUrl(serviceName, domain) : '';
+  
+  // Reset fail state when name changes
+  React.useEffect(() => {
+    setImgFailed(false);
+  }, [serviceName]);
+
   return (
-    <div className="w-12 h-12 flex items-center justify-center bg-[#14291D] rounded-xl text-white font-bold text-xl overflow-hidden border border-white/10">
-      {serviceName ? (
+    <div className="w-12 h-12 flex items-center justify-center rounded-xl text-white font-bold text-xl overflow-hidden border border-white/10 bg-white">
+      {serviceName && !imgFailed ? (
         <img
-          src={`https://logo.clearbit.com/${domain}`}
-          alt="Service Logo"
-          className="w-full h-full object-contain bg-white"
-          onError={(e: any) => {
-            e.target.style.display = 'none';
-            if (e.target.nextSibling) e.target.nextSibling.style.display = 'block';
-          }}
-          onLoad={(e: any) => {
-            e.target.style.display = 'block';
-            if (e.target.nextSibling) e.target.nextSibling.style.display = 'none';
-          }}
+          src={logoUrl}
+          alt={`${serviceName} logo`}
+          className="w-full h-full object-contain p-1"
+          onError={() => setImgFailed(true)}
         />
-      ) : null}
-      
-      <span style={{ display: 'none' }}>
-        {serviceName ? serviceName.charAt(0).toUpperCase() : ''}
-      </span>
+      ) : (
+        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-500 to-teal-600 text-white">
+          {serviceName ? serviceName.charAt(0).toUpperCase() : '?'}
+        </div>
+      )}
     </div>
   );
 };
