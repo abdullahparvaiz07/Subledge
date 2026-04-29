@@ -412,7 +412,7 @@ const AntigravityOfficialLogoContainer = ({ name: serviceName, domain }: { name:
     <div className="w-12 h-12 flex items-center justify-center bg-[#14291D] rounded-xl text-white font-bold text-xl overflow-hidden border border-white/10">
       {serviceName ? (
         <img
-          src={`https://logo.clearbit.com/${serviceName.trim().toLowerCase().replace(/\s+/g, '')}.com`}
+          src={`https://logo.clearbit.com/${domain}`}
           alt="Service Logo"
           className="w-full h-full object-contain bg-white"
           onError={(e: any) => {
