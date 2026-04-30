@@ -1384,6 +1384,35 @@ export default function App() {
             </div>
           </section>
 
+          {/* Premium Logo Strip */}
+          <section className="logo-section">
+            <p className="logo-title">TRACK SUBSCRIPTIONS FROM 100+ SERVICES</p>
+
+            <div className="logo-slider">
+              <div className="logo-track">
+                {/* Repeat logos */}
+                <img src="https://logo.clearbit.com/github.com" alt="GitHub" />
+                <img src="https://logo.clearbit.com/slack.com" alt="Slack" />
+                <img src="https://logo.clearbit.com/notion.so" alt="Notion" />
+                <img src="https://logo.clearbit.com/netflix.com" alt="Netflix" />
+                <img src="https://logo.clearbit.com/spotify.com" alt="Spotify" />
+                <img src="https://logo.clearbit.com/amazon.com" alt="Amazon" />
+                <img src="https://logo.clearbit.com/youtube.com" alt="YouTube" />
+                <img src="https://logo.clearbit.com/apple.com" alt="Apple" />
+
+                {/* duplicate for smooth loop */}
+                <img src="https://logo.clearbit.com/github.com" alt="GitHub" />
+                <img src="https://logo.clearbit.com/slack.com" alt="Slack" />
+                <img src="https://logo.clearbit.com/notion.so" alt="Notion" />
+                <img src="https://logo.clearbit.com/netflix.com" alt="Netflix" />
+                <img src="https://logo.clearbit.com/spotify.com" alt="Spotify" />
+                <img src="https://logo.clearbit.com/amazon.com" alt="Amazon" />
+                <img src="https://logo.clearbit.com/youtube.com" alt="YouTube" />
+                <img src="https://logo.clearbit.com/apple.com" alt="Apple" />
+              </div>
+            </div>
+          </section>
+
           {/* Features Section */}
           <section id="features" className={`py-32 px-8 md:px-16 rounded-[64px] my-20 border transition-all duration-700 ${
             isDark 
