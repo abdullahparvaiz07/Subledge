@@ -7,6 +7,54 @@ import {
   X, Calendar as CalendarIcon, DollarSign, Tag, Trash2, CreditCard, Monitor, Heart, 
   MoreVertical, Mail, LogOut, CheckCircle2, Twitter, Github, Linkedin
 } from 'lucide-react';
+import { SiNetflix, SiSpotify, SiYoutube, SiApple, SiGithub, SiSlack, SiNotion } from 'react-icons/si';
+import { FaAmazon } from 'react-icons/fa';
+
+function BrandMarquee() {
+  const brands = [
+    { icon: SiNetflix, name: "Netflix" },
+    { icon: SiSpotify, name: "Spotify" },
+    { icon: FaAmazon, name: "Amazon" },
+    { icon: SiYoutube, name: "YouTube" },
+    { icon: SiApple, name: "Apple" },
+    { icon: SiGithub, name: "GitHub" },
+    { icon: SiSlack, name: "Slack" },
+    { icon: SiNotion, name: "Notion" },
+  ];
+
+  return (
+    <div className="relative overflow-hidden py-10">
+      {/* Gradient fade (premium touch) */}
+      <div className="pointer-events-none absolute left-0 top-0 h-full w-32 bg-gradient-to-r from-[#081C15] to-transparent z-10" />
+      <div className="pointer-events-none absolute right-0 top-0 h-full w-32 bg-gradient-to-l from-[#081C15] to-transparent z-10" />
+
+      <motion.div
+        className="flex gap-16 items-center w-max"
+        animate={{ x: ["0%", "-50%"] }}
+        transition={{
+          duration: 28,
+          repeat: Infinity,
+          ease: "linear",
+        }}
+      >
+        {[...brands, ...brands].map((b, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-3 shrink-0 opacity-50 hover:opacity-100 transition-all duration-300"
+          >
+            {/* Logo */}
+            <b.icon size={26} className="text-white/70" />
+
+            {/* Name */}
+            <span className="text-sm text-white/60 font-medium tracking-wide whitespace-nowrap">
+              {b.name}
+            </span>
+          </div>
+        ))}
+      </motion.div>
+    </div>
+  );
+}
 export const Logo = ({ isDark }: { isDark: boolean }) => (
   <div className="relative w-8 h-8 flex items-center justify-center">
     <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0">
@@ -1384,34 +1432,7 @@ export default function App() {
             </div>
           </section>
 
-          {/* Premium Logo Strip */}
-          <section className="logo-section">
-            <p className="logo-title">TRACK SUBSCRIPTIONS FROM 100+ SERVICES</p>
-
-            <div className="logo-slider">
-              <div className="logo-track">
-                {/* Repeat logos */}
-                <img src="https://logo.clearbit.com/github.com" alt="GitHub" />
-                <img src="https://logo.clearbit.com/slack.com" alt="Slack" />
-                <img src="https://logo.clearbit.com/notion.so" alt="Notion" />
-                <img src="https://logo.clearbit.com/netflix.com" alt="Netflix" />
-                <img src="https://logo.clearbit.com/spotify.com" alt="Spotify" />
-                <img src="https://logo.clearbit.com/amazon.com" alt="Amazon" />
-                <img src="https://logo.clearbit.com/youtube.com" alt="YouTube" />
-                <img src="https://logo.clearbit.com/apple.com" alt="Apple" />
-
-                {/* duplicate for smooth loop */}
-                <img src="https://logo.clearbit.com/github.com" alt="GitHub" />
-                <img src="https://logo.clearbit.com/slack.com" alt="Slack" />
-                <img src="https://logo.clearbit.com/notion.so" alt="Notion" />
-                <img src="https://logo.clearbit.com/netflix.com" alt="Netflix" />
-                <img src="https://logo.clearbit.com/spotify.com" alt="Spotify" />
-                <img src="https://logo.clearbit.com/amazon.com" alt="Amazon" />
-                <img src="https://logo.clearbit.com/youtube.com" alt="YouTube" />
-                <img src="https://logo.clearbit.com/apple.com" alt="Apple" />
-              </div>
-            </div>
-          </section>
+          <BrandMarquee />
 
           {/* Features Section */}
           <section id="features" className={`py-32 px-8 md:px-16 rounded-[64px] my-20 border transition-all duration-700 ${
