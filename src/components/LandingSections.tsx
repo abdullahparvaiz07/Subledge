@@ -8,7 +8,7 @@ import {
 } from '@phosphor-icons/react';
 
 // ─── Animated Section Wrapper ───────────────────────────────
-function AnimatedSection({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+function AnimatedSection({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number; key?: React.Key }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
   return (
@@ -73,7 +73,7 @@ export function BrandMarquee() {
           >
             {[...brands, ...brands, ...brands].map((b, i) => (
               <div key={i} className="flex items-center gap-3 shrink-0 opacity-40 hover:opacity-100 transition-opacity duration-300">
-                <b.icon size={24} style={{ color: b.color }} />
+                <b.icon size={24} color={b.color} />
                 <span className="text-sm font-medium text-[#95D5B2] whitespace-nowrap">{b.name}</span>
               </div>
             ))}
