@@ -7,6 +7,9 @@ import {
   X, Calendar as CalendarIcon, DollarSign, Tag, Trash2, CreditCard, Monitor, Heart, 
   MoreVertical, Mail, LogOut, CheckCircle2, Twitter, Github, Linkedin
 } from 'lucide-react';
+import NewDashboardView from './components/NewDashboard';
+import { BrandMarquee, FeaturesSection, HowItWorksSection, StatsSection, CTASection, LandingFooter } from './components/LandingSections';
+
 export const Logo = ({ isDark }: { isDark: boolean }) => (
   <div className="relative w-8 h-8 flex items-center justify-center">
     <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="absolute inset-0">
@@ -873,235 +876,27 @@ export default function App() {
       return <VerifyEmailView user={user} onSignOut={handleSignOut} isDark={isDark} />;
     }
 
-    const upcomingBills = subscriptions
-      .filter(s => s.nextBillingDate)
-      .map(s => {
-        const diffTime = s.nextBillingDate.toDate().getTime() - new Date().getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return { ...s, diffDays };
-      })
-      .filter(s => s.diffDays >= 0);
-
-    const nextBigBill = upcomingBills.length > 0 
-      ? upcomingBills.sort((a, b) => convertToUSD(b.amount, b.currency || 'USD') - convertToUSD(a.amount, a.currency || 'USD'))[0]
-      : null;
-
     return (
-      <div 
-        className={`min-h-screen p-8 transition-colors duration-700 ${isDark ? 'text-white' : 'bg-[#f4f4f0] text-[#14291d]'}`}
-        style={isDark ? { background: 'radial-gradient(circle at center, #1b3a29 0%, #14291D 100%)' } : {}}
-      >
-        <div className="max-w-5xl mx-auto">
-          {/* Dashboard Header */}
-          <div className="flex justify-between items-center mb-12">
-            <div className="flex items-center gap-4">
-              <Logo isDark={isDark} />
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold">Subledge</h1>
-                {userProfile?.role === 'admin' && (
-                  <span className="text-[10px] uppercase tracking-widest bg-white/10 px-2 py-0.5 rounded-full border border-white/20">
-                    Admin
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-6">
-              <button 
-                onClick={() => setIsDark(!isDark)}
-                className={`p-2 rounded-full transition-colors ${isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'}`}
-              >
-                {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-              </button>
-              <div className="flex items-center gap-4">
-                <div className="text-right hidden sm:block">
-                  <p className="text-sm font-bold">{user.displayName || user.email}</p>
-                  <button onClick={handleSignOut} className="text-xs opacity-60 hover:opacity-100">Sign Out</button>
-                </div>
-                {user.photoURL && <img src={user.photoURL} alt="Profile" className="w-10 h-10 rounded-full border border-white/10" referrerPolicy="no-referrer" />}
-              </div>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-8">
-              <div className={`p-10 rounded-[40px] border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-black/5 shadow-xl'}`}>
-                <div className="flex justify-between items-center mb-8">
-                  <div>
-                    <h2 className="text-3xl font-serif italic">Welcome back, {user.displayName?.split(' ')[0] || 'Friend'}!</h2>
-                    <p className="opacity-60 text-sm mt-1">You have {subscriptions.length} active subscriptions.</p>
-                  </div>
-                  <button 
-                    onClick={() => setShowAddModal(true)}
-                    className="flex items-center gap-2 px-6 py-3 rounded-full bg-emerald-500 text-white font-bold hover:bg-emerald-600 transition-all shadow-lg hover:shadow-emerald-500/20"
-                  >
-                    <Plus className="w-5 h-5" /> Add New
-                  </button>
-                </div>
-
-                <div className="mb-8 relative">
-                  <Search className={`absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 ${isDark ? 'text-white/30' : 'text-black/30'}`} />
-                  <input 
-                    type="text"
-                    placeholder="Search subscriptions..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className={`w-full pl-14 pr-6 py-4 rounded-2xl border-transparent focus:ring-2 outline-none transition-all ${
-                      isDark 
-                        ? 'bg-white/5 focus:ring-emerald-500/30 text-white placeholder:text-white/30' 
-                        : 'bg-gray-100 focus:ring-emerald-500/20 text-black placeholder:text-black/40'
-                    }`}
-                  />
-                </div>
-
-                {/* Predictive Ghost Alert */}
-                {!isSubsLoading && <GhostAlert upcomingBills={upcomingBills} />}
-
-                {isSubsLoading ? (
-                  <div className="space-y-4">
-                    <SubscriptionSkeleton isDark={isDark} />
-                    <SubscriptionSkeleton isDark={isDark} />
-                    <SubscriptionSkeleton isDark={isDark} />
-                  </div>
-                ) : subscriptions.filter(sub => sub.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 ? (
-                  <div className="py-20 text-center opacity-40 border-2 border-dashed border-current rounded-[40px] flex flex-col items-center justify-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-current/10 flex items-center justify-center">
-                      {searchTerm ? <Search className="w-8 h-8" /> : <Plus className="w-8 h-8" />}
-                    </div>
-                    <p className="font-medium">
-                      {searchTerm ? `No results for "${searchTerm}"` : "No subscriptions added yet."}
-                    </p>
-                    {!searchTerm && (
-                      <button 
-                        onClick={() => setShowAddModal(true)}
-                        className="text-xs underline underline-offset-4 hover:opacity-100"
-                      >
-                        Add your first one
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <motion.div 
-                    initial="hidden"
-                    animate="visible"
-                    variants={{
-                      visible: { transition: { staggerChildren: 0.1 } },
-                      hidden: {}
-                    }}
-                    className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                  >
-                    {subscriptions
-                      .filter(sub => sub.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                      .map((sub) => (
-                      <SubscriptionCard 
-                        key={sub.id} 
-                        sub={sub} 
-                        isDark={isDark} 
-                        processingSubId={processingSubId} 
-                        handleDeleteSubscription={handleDeleteSubscription}
-                        getCategoryIcon={getCategoryIcon}
-                      />
-                    ))}
-                  </motion.div>
-                )}
-              </div>
-            </div>
-
-            {/* Sidebar / Stats */}
-            <div className="space-y-8">
-              {/* Currency Switcher */}
-              <div className={`p-4 rounded-[24px] border flex gap-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-black/5 shadow-md'}`}>
-                {Object.keys(EXCHANGE_RATES).map(curr => (
-                  <button
-                    key={curr}
-                    onClick={() => setDisplayCurrency(curr)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex-1 ${
-                      displayCurrency === curr
-                        ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
-                        : isDark ? 'hover:bg-white/10' : 'hover:bg-black/5'
-                    }`}
-                  >
-                    {curr}
-                  </button>
-                ))}
-              </div>
-
-              {/* The Floating Burn Rate Sphere */}
-              <div className={`relative p-8 rounded-[40px] border flex flex-col items-center justify-center overflow-hidden transition-all hover:shadow-2xl min-h-[350px] ${
-                isDark ? 'bg-white/5 border-white/10 hover:shadow-emerald-500/5' : 'bg-white border-black/5 shadow-xl hover:shadow-emerald-500/10'
-              }`}>
-                {/* Background glow */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] bg-emerald-500/20 blur-[60px] rounded-full pointer-events-none" />
-                
-                <h3 className="font-bold mb-8 flex items-center gap-2 text-sm uppercase tracking-widest opacity-60 z-10">
-                  <PieChart className="w-4 h-4 text-emerald-500" /> Monthly Burn Rate
-                </h3>
-                
-                {/* The Sphere */}
-                <motion.div 
-                  animate={{ y: [-8, 8, -8] }}
-                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                  className={`relative z-10 w-56 h-56 rounded-full flex flex-col items-center justify-center backdrop-blur-md border border-white/20 shadow-[inset_0_4px_30px_rgba(255,255,255,0.1),0_8px_32px_rgba(0,0,0,0.1)] ${
-                    isDark ? 'bg-white/10 shadow-[0_0_50px_rgba(16,185,129,0.15)]' : 'bg-white/60 shadow-[0_0_50px_rgba(16,185,129,0.08)]'
-                  }`}
-                >
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-emerald-500/10 to-transparent" />
-                  <div className="text-4xl font-serif italic font-bold text-center z-10 relative px-4 flex flex-col items-center">
-                    <span className="text-lg opacity-70 mb-1">{CURRENCY_SYMBOLS[displayCurrency] || '$'}</span>
-                    <span>
-                      {subscriptions.reduce((acc, sub) => {
-                        const amountInUSD = convertToUSD(sub.amount, sub.currency || 'USD');
-                        const amountInDisplay = amountInUSD * (EXCHANGE_RATES[displayCurrency] || 1);
-                        return acc + (sub.billingCycle === 'monthly' ? amountInDisplay : amountInDisplay / 12);
-                      }, 0).toFixed(2)}
-                    </span>
-                  </div>
-                  <p className="text-[10px] opacity-60 uppercase tracking-[0.2em] font-bold mt-2 z-10 relative">Total Spent</p>
-                </motion.div>
-
-                {/* Next Big Bill (Upcoming Payments) */}
-                {nextBigBill && (
-                  <div className={`mt-10 w-full p-5 rounded-3xl flex items-center justify-between backdrop-blur-md border relative z-10 shadow-lg ${
-                    isDark ? 'bg-gradient-to-r from-violet-500/20 to-lime-500/20 border-white/10' : 'bg-gradient-to-r from-violet-500/10 to-lime-500/10 border-black/5'
-                  }`}>
-                    <div className="flex items-center gap-4">
-                      <div className="transform scale-[0.7] origin-left -my-4 -ml-2">
-                        <AntigravityOfficialLogoContainer 
-                          name={nextBigBill.name}
-                          domain={getDomain(nextBigBill.name)} 
-                        />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest opacity-50 mb-1">Next Big Bill</p>
-                        <p className="font-bold text-sm truncate max-w-[120px]">{nextBigBill.name}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xl font-bold text-emerald-500">
-                        {nextBigBill.diffDays === 0 ? 'Today' : `${nextBigBill.diffDays}d`}
-                      </p>
-                      <p className="text-[10px] font-bold uppercase tracking-widest opacity-50 mt-0.5">Left</p>
-                    </div>
-                  </div>
-                )}
-                
-                <SmartBurnRateBar 
-                  subscriptions={subscriptions} 
-                  displayCurrency={displayCurrency} 
-                />
-              </div>
-
-              <button 
-                onClick={() => setView('home')}
-                className={`w-full py-4 rounded-3xl border transition-all flex items-center justify-center gap-2 font-bold ${
-                  isDark ? 'border-white/10 hover:bg-white/5' : 'border-black/5 hover:bg-black/5'
-                }`}
-              >
-                <ArrowLeft className="w-4 h-4" /> Landing Page
-              </button>
-            </div>
-          </div>
-        </div>
+      <>
+        <NewDashboardView
+          user={user}
+          subscriptions={subscriptions}
+          isSubsLoading={isSubsLoading}
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          showAddModal={showAddModal}
+          setShowAddModal={setShowAddModal}
+          processingSubId={processingSubId}
+          handleDeleteSubscription={handleDeleteSubscription}
+          handleSignOut={handleSignOut}
+          setView={setView}
+          displayCurrency={displayCurrency}
+          setDisplayCurrency={setDisplayCurrency}
+          EXCHANGE_RATES={EXCHANGE_RATES}
+          CURRENCY_SYMBOLS={CURRENCY_SYMBOLS}
+          convertToUSD={convertToUSD}
+          isDark={isDark}
+        />
 
         {/* Add Subscription Modal */}
         <AnimatePresence>
@@ -1118,162 +913,69 @@ export default function App() {
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className={`relative w-full max-w-md p-8 rounded-[32px] shadow-2xl ${
-                  isDark ? 'bg-[#1a3a28] text-white' : 'bg-white text-[#14291d]'
-                }`}
+                className="relative w-full max-w-md p-8 rounded-[32px] shadow-2xl bg-[#081C15]/95 border border-white/10 text-[#D8F3DC] backdrop-blur-xl"
               >
                 <button 
                   onClick={() => setShowAddModal(false)}
-                  className={`absolute top-6 right-6 p-2 rounded-full transition-colors ${
-                    isDark ? 'hover:bg-white/10 text-white/40' : 'hover:bg-black/5 text-black/40'
-                  }`}
+                  className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10 text-white/40 transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
 
-                <h2 className="text-2xl font-bold mb-2">Add Subscription</h2>
-                <p className={`text-sm mb-8 ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                  Keep track of your recurring expenses.
-                </p>
+                <h2 className="text-2xl font-bold mb-2 text-white">Add Subscription</h2>
+                <p className="text-sm mb-8 text-[#95D5B2]">Keep track of your recurring expenses.</p>
 
                 <form onSubmit={handleAddSubscription} className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider opacity-50 ml-1">Service Name</label>
-                    <div className="flex items-center gap-4">
-                      <div className="flex-shrink-0">
-                        {newSub.name.trim().length > 2 ? (
-                          <div className="transform scale-[0.85] origin-center -my-2 -mx-1">
-                            <AntigravityOfficialLogoContainer 
-                              name={newSub.name}
-                              domain={getDomain(newSub.name)} 
-                            />
-                          </div>
-                        ) : (
-                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border transition-all ${isDark ? 'bg-white/5 border-white/10 shadow-inner' : 'bg-black/5 border-black/5'}`}>
-                            <Zap className="w-5 h-5 opacity-30" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="relative flex-1">
-                        <input 
-                          type="text" 
-                          required
-                          placeholder="e.g. Netflix, Spotify" 
-                          value={newSub.name}
-                          onChange={(e) => setNewSub({...newSub, name: e.target.value})}
-                          className={`w-full px-5 py-4 rounded-2xl border-transparent focus:ring-2 outline-none transition-all ${
-                            isDark 
-                              ? 'bg-white/5 focus:ring-emerald-500/30 text-white placeholder:text-white/30' 
-                              : 'bg-gray-100 focus:ring-emerald-500/20 text-black placeholder:text-black/40'
-                          }`} 
-                        />
-                      </div>
-                    </div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-[#95D5B2] ml-1">Service Name</label>
+                    <input type="text" required placeholder="e.g. Netflix, Spotify" value={newSub.name}
+                      onChange={(e) => setNewSub({...newSub, name: e.target.value})}
+                      className="w-full px-5 py-4 rounded-2xl bg-[#1B4332] border border-white/10 text-white placeholder:text-[#74C69D]/60 focus:outline-none focus:ring-2 focus:ring-[#52B788]/40" />
                   </div>
-
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider opacity-50 ml-1">Amount</label>
-                      <div className="relative">
-                        <div className={`absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold opacity-40`}>
-                          {CURRENCY_SYMBOLS[newSub.currency] || '$'}
-                        </div>
-                        <input 
-                          type="number" 
-                          step="0.01"
-                          required
-                          placeholder="0.00" 
-                          value={newSub.amount}
-                          onChange={(e) => setNewSub({...newSub, amount: e.target.value})}
-                          className={`w-full pl-12 pr-5 py-4 rounded-2xl border-transparent focus:ring-2 outline-none transition-all ${
-                            isDark 
-                              ? 'bg-white/5 focus:ring-emerald-500/30 text-white placeholder:text-white/30' 
-                              : 'bg-gray-100 focus:ring-emerald-500/20 text-black placeholder:text-black/40'
-                          }`} 
-                        />
-                      </div>
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#95D5B2] ml-1">Amount</label>
+                      <input type="number" step="0.01" required placeholder="0.00" value={newSub.amount}
+                        onChange={(e) => setNewSub({...newSub, amount: e.target.value})}
+                        className="w-full px-5 py-4 rounded-2xl bg-[#1B4332] border border-white/10 text-white placeholder:text-[#74C69D]/60 focus:outline-none focus:ring-2 focus:ring-[#52B788]/40 font-mono" />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider opacity-50 ml-1">Currency</label>
-                      <select 
-                        value={newSub.currency}
-                        onChange={(e) => setNewSub({...newSub, currency: e.target.value})}
-                        className={`w-full px-5 py-4 rounded-2xl border-transparent focus:ring-2 outline-none transition-all appearance-none ${
-                          isDark 
-                            ? 'bg-white/5 focus:ring-emerald-500/30 text-white' 
-                            : 'bg-gray-100 focus:ring-emerald-500/20 text-black'
-                        }`}
-                      >
-                        {Object.keys(EXCHANGE_RATES).map(curr => (
-                          <option key={curr} value={curr}>{curr}</option>
-                        ))}
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#95D5B2] ml-1">Currency</label>
+                      <select value={newSub.currency} onChange={(e) => setNewSub({...newSub, currency: e.target.value})}
+                        className="w-full px-5 py-4 rounded-2xl bg-[#1B4332] border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-[#52B788]/40 appearance-none">
+                        {Object.keys(EXCHANGE_RATES).map(curr => (<option key={curr} value={curr}>{curr}</option>))}
                       </select>
                     </div>
                   </div>
-
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold uppercase tracking-wider opacity-50 ml-1">Cycle</label>
-                      <select 
-                        value={newSub.billingCycle}
-                        onChange={(e) => setNewSub({...newSub, billingCycle: e.target.value})}
-                        className={`w-full px-5 py-4 rounded-2xl border-transparent focus:ring-2 outline-none transition-all appearance-none ${
-                          isDark 
-                            ? 'bg-white/5 focus:ring-emerald-500/30 text-white' 
-                            : 'bg-gray-100 focus:ring-emerald-500/20 text-black'
-                        }`}
-                      >
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#95D5B2] ml-1">Cycle</label>
+                      <select value={newSub.billingCycle} onChange={(e) => setNewSub({...newSub, billingCycle: e.target.value})}
+                        className="w-full px-5 py-4 rounded-2xl bg-[#1B4332] border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-[#52B788]/40 appearance-none">
                         <option value="monthly">Monthly</option>
                         <option value="yearly">Yearly</option>
                       </select>
                     </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider opacity-50 ml-1">Next Billing Date</label>
-                    <div className="relative">
-                      <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
-                      <input 
-                        type="date" 
-                        required
-                        value={newSub.nextBillingDate}
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-[#95D5B2] ml-1">Next Billing</label>
+                      <input type="date" required value={newSub.nextBillingDate}
                         onChange={(e) => setNewSub({...newSub, nextBillingDate: e.target.value})}
-                        className={`w-full pl-12 pr-5 py-4 rounded-2xl border-transparent focus:ring-2 outline-none transition-all ${
-                          isDark 
-                            ? 'bg-white/5 focus:ring-emerald-500/30 text-white [color-scheme:dark]' 
-                            : 'bg-gray-100 focus:ring-emerald-500/20 text-black'
-                        }`} 
-                      />
+                        className="w-full px-5 py-4 rounded-2xl bg-[#1B4332] border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-[#52B788]/40 [color-scheme:dark]" />
                     </div>
                   </div>
-
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider opacity-50 ml-1">Category</label>
-                    <div className="relative">
-                      <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
-                      <select 
-                        value={newSub.category}
-                        onChange={(e) => setNewSub({...newSub, category: e.target.value})}
-                        className={`w-full pl-12 pr-5 py-4 rounded-2xl border-transparent focus:ring-2 outline-none transition-all appearance-none ${
-                          isDark 
-                            ? 'bg-white/5 focus:ring-emerald-500/30 text-white' 
-                            : 'bg-gray-100 focus:ring-emerald-500/20 text-black'
-                        }`}
-                      >
-                        <option value="Entertainment">Entertainment</option>
-                        <option value="Software">Software</option>
-                        <option value="Utilities">Utilities</option>
-                        <option value="Health">Health</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-[#95D5B2] ml-1">Category</label>
+                    <select value={newSub.category} onChange={(e) => setNewSub({...newSub, category: e.target.value})}
+                      className="w-full px-5 py-4 rounded-2xl bg-[#1B4332] border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-[#52B788]/40 appearance-none">
+                      <option value="Entertainment">Entertainment</option>
+                      <option value="Software">Software</option>
+                      <option value="Utilities">Utilities</option>
+                      <option value="Health">Health</option>
+                      <option value="Other">Other</option>
+                    </select>
                   </div>
-
-                  <button 
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition-all shadow-lg hover:shadow-emerald-500/20 mt-4 disabled:opacity-50"
-                  >
+                  <button type="submit" disabled={isSubmitting}
+                    className="w-full py-4 rounded-2xl bg-[#D8F3DC] hover:bg-[#B7E4C7] text-[#081C15] font-bold transition-all shadow-lg mt-4 disabled:opacity-50">
                     {isSubmitting ? 'Adding...' : 'Add Subscription'}
                   </button>
                 </form>
@@ -1281,7 +983,7 @@ export default function App() {
             </div>
           )}
         </AnimatePresence>
-      </div>
+      </>
     );
   }
 
@@ -1383,251 +1085,17 @@ export default function App() {
               <PhoneMockup />
             </div>
           </section>
-
-          {/* Premium Logo Strip */}
-          <section className="logo-section">
-            <p className="logo-title">TRACK SUBSCRIPTIONS FROM 100+ SERVICES</p>
-
-            <div className="logo-slider">
-              <div className="logo-track">
-                {/* Repeat logos */}
-                <img src="https://logo.clearbit.com/github.com" alt="GitHub" />
-                <img src="https://logo.clearbit.com/slack.com" alt="Slack" />
-                <img src="https://logo.clearbit.com/notion.so" alt="Notion" />
-                <img src="https://logo.clearbit.com/netflix.com" alt="Netflix" />
-                <img src="https://logo.clearbit.com/spotify.com" alt="Spotify" />
-                <img src="https://logo.clearbit.com/amazon.com" alt="Amazon" />
-                <img src="https://logo.clearbit.com/youtube.com" alt="YouTube" />
-                <img src="https://logo.clearbit.com/apple.com" alt="Apple" />
-
-                {/* duplicate for smooth loop */}
-                <img src="https://logo.clearbit.com/github.com" alt="GitHub" />
-                <img src="https://logo.clearbit.com/slack.com" alt="Slack" />
-                <img src="https://logo.clearbit.com/notion.so" alt="Notion" />
-                <img src="https://logo.clearbit.com/netflix.com" alt="Netflix" />
-                <img src="https://logo.clearbit.com/spotify.com" alt="Spotify" />
-                <img src="https://logo.clearbit.com/amazon.com" alt="Amazon" />
-                <img src="https://logo.clearbit.com/youtube.com" alt="YouTube" />
-                <img src="https://logo.clearbit.com/apple.com" alt="Apple" />
-              </div>
-            </div>
-          </section>
-
-          {/* Features Section */}
-          <section id="features" className={`py-32 px-8 md:px-16 rounded-[64px] my-20 border transition-all duration-700 ${
-            isDark 
-              ? 'bg-white/[0.02] border-white/5 shadow-[0_0_80px_rgba(0,0,0,0.2)]' 
-              : 'bg-white border-black/5 shadow-[0_20px_50px_rgba(0,0,0,0.04)]'
-          }`}>
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className="mb-20"
-            >
-              <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-bold tracking-[0.2em] uppercase mb-6 border ${
-                isDark ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-              }`}>
-                <Zap className="w-3.5 h-3.5" /> Features
-              </div>
-              <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl tracking-tight mb-6 leading-[1.1]">
-                Everything You Need to <br className="hidden md:block" />
-                <span className="italic opacity-90 text-emerald-500">Master Your Subscriptions</span>
-              </h2>
-              <p className="text-lg md:text-xl opacity-60 max-w-2xl font-light leading-relaxed">
-                Powerful tools designed to give you complete visibility and control over your recurring expenses.
-              </p>
-            </motion.div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {features.map((feature, idx) => (
-                <motion.div 
-                  key={idx} 
-                  initial={{ opacity: 0, y: 40 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.7, delay: idx * 0.1, ease: [0.22, 1, 0.36, 1] }}
-                  className={`group relative p-10 rounded-[40px] border transition-all duration-500 hover:-translate-y-3 ${
-                    feature.wide ? 'md:col-span-2' : 'col-span-1'
-                  } ${
-                    isDark 
-                      ? 'bg-white/[0.03] border-white/10 hover:border-emerald-500/40 hover:shadow-[0_30px_60px_rgba(16,185,129,0.1)]' 
-                      : 'bg-gray-50/50 border-black/5 hover:bg-white hover:border-emerald-600/20 hover:shadow-[0_30px_60px_rgba(16,185,129,0.08)]'
-                  }`}
-                >
-                  <div className="flex justify-between items-start mb-12">
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl bg-gradient-to-br transition-transform duration-500 group-hover:scale-110 ${
-                      isDark ? 'from-emerald-400/20 to-teal-600/20 text-emerald-400' : 'from-emerald-500/20 to-teal-700/20 text-emerald-700'
-                    }`}>
-                      <feature.icon className="w-7 h-7 transition-transform duration-500 group-hover:rotate-12" />
-                    </div>
-                    {feature.badge && (
-                      <span className={`text-[9px] font-bold tracking-[0.15em] uppercase px-3 py-1.5 rounded-full border ${
-                        isDark ? 'bg-white/5 border-white/10 text-white/70' : 'bg-black/5 border-black/10 text-black/70'
-                      }`}>
-                        {feature.badge}
-                      </span>
-                    )}
-                  </div>
-                  <h3 className="text-2xl font-semibold mb-4 tracking-tight">{feature.title}</h3>
-                  <p className={`text-base font-light leading-relaxed ${isDark ? 'text-white/50' : 'text-black/50'}`}>
-                    {feature.desc}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </section>
-
-          {/* How It Works Section */}
-          <section id="how-it-works" className="py-32 relative">
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-              className="mb-20 text-center flex flex-col items-center"
-            >
-              <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-bold tracking-[0.2em] uppercase mb-6 border ${
-                isDark ? 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400' : 'bg-cyan-50 border-cyan-200 text-cyan-700'
-              }`}>
-                <RefreshCw className="w-3.5 h-3.5" /> How It Works
-              </div>
-              <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl tracking-tight leading-[1.1]">
-                Up and Running in <span className="italic opacity-90 text-cyan-500">Minutes</span>
-              </h2>
-            </motion.div>
-
-            <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 relative group/section">
-              {/* Connector Line */}
-              <div className={`hidden lg:block absolute top-[50%] left-0 w-full h-[1px] -translate-y-1/2 overflow-hidden ${
-                isDark ? 'bg-white/10' : 'bg-black/10'
-              }`}>
-                <motion.div 
-                  initial={{ x: "-100%" }}
-                  whileInView={{ x: "100%" }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 2, ease: "easeInOut" }}
-                  className="w-full h-full bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" 
-                />
-              </div>
-              
-              {steps.map((step, idx) => (
-                <motion.div 
-                  key={idx} 
-                  initial={{ opacity: 0, scale: 0.9, y: 30 }}
-                  whileInView={{ opacity: 1, scale: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.6, delay: idx * 0.15, ease: [0.22, 1, 0.36, 1] }}
-                  className="flex-1 relative group cursor-default pt-12 lg:pt-0"
-                >
-                  {/* Step Number */}
-                  <div className={`text-[100px] xl:text-[120px] leading-none font-mono font-bold absolute -top-6 lg:-top-14 -left-4 lg:-left-6 transition-all duration-700 z-0 select-none pointer-events-none
-                    ${isDark 
-                      ? 'text-white/[0.03] group-hover:text-cyan-400/20 group-hover:drop-shadow-[0_0_30px_rgba(34,211,238,0.4)]' 
-                      : 'text-black/[0.03] group-hover:text-cyan-500/20 group-hover:drop-shadow-[0_0_30px_rgba(6,182,212,0.4)]'
-                    }`}>
-                    {step.num}
-                  </div>
-                  
-                  {/* Card */}
-                  <div className={`relative z-10 p-10 rounded-[40px] border transition-all duration-500 group-hover:-translate-y-4 group-hover:shadow-[0_30px_60px_-15px_rgba(34,211,238,0.15)] h-full ${
-                    isDark 
-                      ? 'bg-[#14291d]/80 backdrop-blur-2xl border-white/10 group-hover:border-cyan-400/40' 
-                      : 'bg-white/80 backdrop-blur-2xl border-black/10 group-hover:border-cyan-500/40 shadow-sm'
-                  }`}>
-                    <div className="text-4xl mb-8 transition-transform duration-500 group-hover:scale-125 group-hover:rotate-6 origin-left">{step.emoji}</div>
-                    <h3 className={`font-bold text-xl mb-3 transition-colors duration-300 ${isDark ? 'group-hover:text-cyan-400' : 'group-hover:text-cyan-600'}`}>{step.title}</h3>
-                    <p className={`text-base font-light leading-relaxed ${isDark ? 'text-white/60' : 'text-black/60'}`}>
-                      {step.desc}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </section>
         </main>
+      </div>
 
-        {/* Footer */}
-        <motion.footer 
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1 }}
-          className={`pt-20 pb-10 mt-32 border-t ${
-            isDark ? 'border-white/10' : 'border-black/10'
-          }`}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 lg:gap-8 mb-16">
-            <div className="lg:col-span-2 flex flex-col gap-6">
-              <div className="flex items-center gap-3 group cursor-pointer w-fit">
-                <div className="transition-transform duration-500 group-hover:rotate-12">
-                  <Logo isDark={isDark} />
-                </div>
-                <span className="text-xl font-medium tracking-wide">Subledge</span>
-              </div>
-              <p className={`text-sm leading-relaxed max-w-sm ${isDark ? 'text-white/50' : 'text-black/50'}`}>
-                Your ultimate subscription management platform. Track expenses, get smart reminders, and optimize your financial life with AI-powered insights.
-              </p>
-              <div className="flex items-center gap-4 mt-2">
-                <a href="#" className={`p-2.5 rounded-full transition-all ${isDark ? 'bg-white/5 hover:bg-white/10 text-white/60 hover:text-white' : 'bg-black/5 hover:bg-black/10 text-black/60 hover:text-black'}`}>
-                  <Twitter className="w-4 h-4" />
-                </a>
-                <a href="#" className={`p-2.5 rounded-full transition-all ${isDark ? 'bg-white/5 hover:bg-white/10 text-white/60 hover:text-white' : 'bg-black/5 hover:bg-black/10 text-black/60 hover:text-black'}`}>
-                  <Github className="w-4 h-4" />
-                </a>
-                <a href="#" className={`p-2.5 rounded-full transition-all ${isDark ? 'bg-white/5 hover:bg-white/10 text-white/60 hover:text-white' : 'bg-black/5 hover:bg-black/10 text-black/60 hover:text-black'}`}>
-                  <Linkedin className="w-4 h-4" />
-                </a>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-5">
-              <h4 className="font-bold text-sm tracking-widest uppercase">Product</h4>
-              <div className="flex flex-col gap-3 text-sm">
-                <a href="#" className={`transition-colors ${isDark ? 'text-white/50 hover:text-emerald-400' : 'text-black/50 hover:text-emerald-600'}`}>Features</a>
-                <a href="#" className={`transition-colors ${isDark ? 'text-white/50 hover:text-emerald-400' : 'text-black/50 hover:text-emerald-600'}`}>Integrations</a>
-                <a href="#" className={`transition-colors ${isDark ? 'text-white/50 hover:text-emerald-400' : 'text-black/50 hover:text-emerald-600'}`}>Pricing</a>
-                <a href="#" className={`transition-colors ${isDark ? 'text-white/50 hover:text-emerald-400' : 'text-black/50 hover:text-emerald-600'}`}>Changelog</a>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-5">
-              <h4 className="font-bold text-sm tracking-widest uppercase">Resources</h4>
-              <div className="flex flex-col gap-3 text-sm">
-                <a href="#" className={`transition-colors ${isDark ? 'text-white/50 hover:text-emerald-400' : 'text-black/50 hover:text-emerald-600'}`}>Help Center</a>
-                <a href="#" className={`transition-colors ${isDark ? 'text-white/50 hover:text-emerald-400' : 'text-black/50 hover:text-emerald-600'}`}>Community</a>
-                <a href="#" className={`transition-colors ${isDark ? 'text-white/50 hover:text-emerald-400' : 'text-black/50 hover:text-emerald-600'}`}>Blog</a>
-                <a href="#" className={`transition-colors ${isDark ? 'text-white/50 hover:text-emerald-400' : 'text-black/50 hover:text-emerald-600'}`}>Status</a>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-5">
-              <h4 className="font-bold text-sm tracking-widest uppercase">Legal</h4>
-              <div className="flex flex-col gap-3 text-sm">
-                <a href="#" className={`transition-colors ${isDark ? 'text-white/50 hover:text-emerald-400' : 'text-black/50 hover:text-emerald-600'}`}>Privacy Policy</a>
-                <a href="#" className={`transition-colors ${isDark ? 'text-white/50 hover:text-emerald-400' : 'text-black/50 hover:text-emerald-600'}`}>Terms of Service</a>
-                <a href="#" className={`transition-colors ${isDark ? 'text-white/50 hover:text-emerald-400' : 'text-black/50 hover:text-emerald-600'}`}>Cookie Policy</a>
-              </div>
-            </div>
-          </div>
-
-          <div className={`pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4 ${isDark ? 'border-white/10' : 'border-black/10'}`}>
-            <div className={`text-xs font-light tracking-wider ${isDark ? 'text-white/40' : 'text-black/40'}`}>
-              &copy; {new Date().getFullYear()} Subledge Inc. Crafted for financial freedom.
-            </div>
-            
-            <div className="flex items-center gap-2 group cursor-pointer">
-              <Mail className={`w-3.5 h-3.5 transition-colors ${isDark ? 'text-emerald-500/60 group-hover:text-emerald-400' : 'text-emerald-600/60 group-hover:text-emerald-700'}`} />
-              <a 
-                href="mailto:abdullahparvaizofficial@gmail.com" 
-                className={`text-[10px] font-bold tracking-[0.1em] transition-colors ${isDark ? 'text-white/30 group-hover:text-white/60' : 'text-black/30 group-hover:text-black/60'}`}
-              >
-                abdullahparvaizofficial@gmail.com
-              </a>
-            </div>
-          </div>
-        </motion.footer>
+      {/* New Landing Sections */}
+      <BrandMarquee />
+      <div className="bg-[#081C15]">
+        <FeaturesSection />
+        <HowItWorksSection />
+        <StatsSection />
+        <CTASection onGetStarted={() => setView('signup')} />
+        <LandingFooter />
       </div>
     </div>
   );
