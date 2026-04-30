@@ -714,14 +714,19 @@ export default function App() {
     category: 'Entertainment'
   });
 
+  // Use a ref to track the current view inside the auth effect without
+  // causing the effect to re-run (and tear down the snapshot listener)
+  const viewRef = useRef(view);
+  useEffect(() => { viewRef.current = view; }, [view]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setIsAuthReady(true);
       
       if (firebaseUser) {
-        // Redirect immediately for better UX
-        if (view === 'login' || view === 'signup') {
+        // Redirect to dashboard on login/signup or on page reload when already authenticated
+        if (viewRef.current === 'login' || viewRef.current === 'signup' || viewRef.current === 'home') {
           setView('dashboard');
         }
 
@@ -780,14 +785,15 @@ export default function App() {
       } else {
         setSubscriptions([]);
         setUserProfile(null);
-        if (view === 'dashboard') {
+        setIsSubsLoading(false);
+        if (viewRef.current === 'dashboard') {
           setView('home');
         }
       }
     });
 
     return () => unsubscribe();
-  }, [view]);
+  }, []); // Empty dependency array — runs once, listener persists for the app's lifetime
 
   const handleSignOut = async () => {
     try {
